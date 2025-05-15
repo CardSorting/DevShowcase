@@ -11,7 +11,20 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  formData?: FormData,
 ): Promise<Response> {
+  // If FormData is provided, use it directly without setting Content-Type (browser will set it with boundary)
+  if (formData) {
+    const res = await fetch(url, {
+      method,
+      body: formData,
+      credentials: "include",
+    });
+    await throwIfResNotOk(res);
+    return res;
+  }
+  
+  // Otherwise handle normal JSON data
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
