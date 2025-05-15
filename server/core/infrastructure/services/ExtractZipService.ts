@@ -1,33 +1,34 @@
 import { IZipExtractor } from '../../domain/interfaces/IZipExtractor';
-import { FileEntity, ProjectFiles, ZipExtractionOptions } from '../../domain/models/ZipProjectModel';
+import { ProjectFiles } from '../../domain/models/ZipProjectModel';
+import * as extract from 'extract-zip';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as fsPromises from 'fs/promises';
-import extract from 'extract-zip';
 
 /**
- * Concrete implementation of ZIP extraction service
- * Following Single Responsibility Principle
+ * Implementation of ZIP extraction service
+ * Using the more reliable extract-zip package for better extraction results
  */
 export class ExtractZipService implements IZipExtractor {
   /**
    * Extract a ZIP file to a target directory
-   * @param zipPath Path to the ZIP file
-   * @param targetPath Path where files should be extracted
-   * @param options Optional extraction configuration
+   * @param zipFilePath Path to the ZIP file
+   * @param targetDir Directory to extract to
    */
-  async extract(zipPath: string, targetPath: string, options?: ZipExtractionOptions): Promise<boolean> {
+  async extract(zipFilePath: string, targetDir: string): Promise<boolean> {
     try {
-      console.log(`Extracting ZIP: ${zipPath} to ${targetPath}`);
+      console.log(`Extracting ZIP from ${zipFilePath} to ${targetDir}`);
       
-      // Ensure the target directory exists
-      await fsPromises.mkdir(targetPath, { recursive: true });
+      // Ensure target directory exists
+      await fs.mkdir(targetDir, { recursive: true });
       
-      // Use extract-zip to extract the ZIP file
-      await extract(zipPath, { dir: targetPath });
+      // Extract the ZIP file
+      await extract(zipFilePath, { dir: path.resolve(targetDir) });
       
-      console.log(`ZIP extraction completed successfully`);
-      return true;
+      // Verify extraction by checking if directory has content
+      const files = await fs.readdir(targetDir);
+      console.log(`Found ${files.length} items in extracted directory`);
+      
+      return files.length > 0;
     } catch (error) {
       console.error('Error extracting ZIP file:', error);
       return false;
@@ -35,91 +36,71 @@ export class ExtractZipService implements IZipExtractor {
   }
   
   /**
-   * Analyze extracted files to gather project structure information
-   * @param projectDir Directory where files were extracted
+   * Analyze extracted files to identify HTML and other important files
+   * @param projectDir Directory containing the extracted files
    */
   async analyzeFiles(projectDir: string): Promise<ProjectFiles> {
-    console.log(`Analyzing files in directory: ${projectDir}`);
-    
-    const result: ProjectFiles = {
-      rootFiles: [],
-      htmlFiles: [],
-      hasIndexHtml: false
-    };
-    
     try {
-      // Get all files in the project directory recursively
-      const files = await this.getFilesRecursively(projectDir);
+      console.log(`Analyzing files in ${projectDir}`);
       
-      // Process files
-      for (const file of files) {
-        // Add to rootFiles if it's in the root directory
-        if (path.dirname(file.path) === projectDir) {
-          result.rootFiles.push(file);
-        }
-        
-        // Add to htmlFiles if it's an HTML file
-        if (file.name.endsWith('.html')) {
-          result.htmlFiles.push(file);
-          
-          // Check if it's index.html
-          if (file.name === 'index.html') {
-            // Check if the index.html is in the root or a subfolder
-            if (path.dirname(file.path) === projectDir) {
-              result.hasIndexHtml = true;
-            }
-          }
-        }
-      }
+      const rootFiles = await fs.readdir(projectDir);
+      console.log(`Root files: ${rootFiles.join(', ')}`);
       
-      console.log(`Analysis results: 
-        - Total root files: ${result.rootFiles.length}
-        - Total HTML files: ${result.htmlFiles.length}
-        - Has index.html in root: ${result.hasIndexHtml}`);
+      // First, check for index.html in the root directory
+      const rootIndexHtml = rootFiles.includes('index.html');
       
-      return result;
+      // Find all HTML files recursively
+      const htmlFiles = await this.findHtmlFilesRecursively(projectDir);
+      console.log(`Found ${htmlFiles.length} HTML files`);
+      
+      return {
+        rootFiles,
+        htmlFiles,
+        hasIndexHtml: rootIndexHtml || htmlFiles.some(file => path.basename(file) === 'index.html')
+      };
     } catch (error) {
       console.error('Error analyzing project files:', error);
-      return result;
+      return {
+        rootFiles: [],
+        htmlFiles: [],
+        hasIndexHtml: false
+      };
     }
   }
   
   /**
-   * Get all files in a directory recursively
-   * @param dir Directory to scan
-   * @param baseDir Base directory for relative paths (defaults to dir)
+   * Recursively find all HTML files in a directory
+   * @param dir Directory to search
+   * @param basePath Optional base path for constructing relative paths
    */
-  private async getFilesRecursively(dir: string, baseDir?: string): Promise<FileEntity[]> {
-    if (!baseDir) baseDir = dir;
+  private async findHtmlFilesRecursively(dir: string, basePath = ''): Promise<string[]> {
+    let htmlFiles: string[] = [];
     
-    let results: FileEntity[] = [];
-    const entries = await fsPromises.readdir(dir, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      const relativePath = path.relative(baseDir, fullPath);
+    try {
+      const files = await fs.readdir(dir, { withFileTypes: true });
       
-      if (entry.isDirectory()) {
-        // Add directory entity
-        results.push({
-          path: fullPath,
-          name: entry.name,
-          type: 'directory'
-        });
+      for (const file of files) {
+        const filePath = path.join(dir, file.name);
+        const relativePath = path.join(basePath, file.name);
         
-        // Recursively get files in subdirectory
-        const subFiles = await this.getFilesRecursively(fullPath, baseDir);
-        results = results.concat(subFiles);
-      } else {
-        // Add file entity
-        results.push({
-          path: fullPath,
-          name: entry.name,
-          type: 'file'
-        });
+        if (file.isDirectory()) {
+          // Skip macOS metadata directories
+          if (file.name === '__MACOSX') {
+            console.log('Skipping macOS metadata directory');
+            continue;
+          }
+          
+          // Recursively search subdirectories
+          const subDirHtmlFiles = await this.findHtmlFilesRecursively(filePath, relativePath);
+          htmlFiles = [...htmlFiles, ...subDirHtmlFiles];
+        } else if (file.isFile() && file.name.toLowerCase().endsWith('.html')) {
+          htmlFiles.push(relativePath);
+        }
       }
+    } catch (error) {
+      console.error(`Error searching for HTML files in ${dir}:`, error);
     }
     
-    return results;
+    return htmlFiles;
   }
 }

@@ -1,21 +1,22 @@
-import { ProjectFiles, ZipExtractionOptions } from '../models/ZipProjectModel';
+import { ProjectFiles } from "../models/ZipProjectModel";
 
 /**
- * Interface for ZIP extraction services
- * Following Interface Segregation and Dependency Inversion principles
+ * Interface for ZIP extraction service
+ * Following Interface Segregation Principle
  */
 export interface IZipExtractor {
   /**
    * Extract a ZIP file to a target directory
-   * @param zipPath Path to the ZIP file
-   * @param targetPath Path where files should be extracted
-   * @param options Optional extraction configuration
+   * @param zipFilePath Path to the ZIP file
+   * @param targetDir Directory to extract to
+   * @returns Boolean indicating success
    */
-  extract(zipPath: string, targetPath: string, options?: ZipExtractionOptions): Promise<boolean>;
-  
+  extract(zipFilePath: string, targetDir: string): Promise<boolean>;
+
   /**
-   * Analyze extracted files to gather project structure information
-   * @param projectDir Directory where files were extracted
+   * Analyze extracted files to identify HTML and other important files
+   * @param projectDir Directory containing the extracted files
+   * @returns Object with information about the project files
    */
   analyzeFiles(projectDir: string): Promise<ProjectFiles>;
 }

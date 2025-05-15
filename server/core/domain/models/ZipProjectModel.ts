@@ -1,8 +1,6 @@
 /**
- * Domain models for handling ZIP project uploads
- * Following Domain-Driven Design (DDD) principles
+ * Represents the metadata for a project upload
  */
-
 export interface ProjectMetadata {
   userId: number;
   username: string;
@@ -11,21 +9,20 @@ export interface ProjectMetadata {
   category: string;
 }
 
-export interface FileEntity {
-  path: string;
-  name: string;
-  type: 'file' | 'directory';
-  content?: Buffer;
-}
-
+/**
+ * Represents the analyzed files in a project directory
+ */
 export interface ProjectFiles {
-  rootFiles: FileEntity[];
-  htmlFiles: FileEntity[];
+  rootFiles: string[];
+  htmlFiles: string[];
   hasIndexHtml: boolean;
 }
 
+/**
+ * Represents the result of processing a project
+ */
 export interface ProjectProcessingResult {
-  projectId: string; 
+  projectId: string;
   metadata: ProjectMetadata;
   projectUrl: string;
   previewUrl: string;
@@ -33,12 +30,3 @@ export interface ProjectProcessingResult {
   success: boolean;
   error?: string;
 }
-
-export interface ZipExtractionOptions {
-  preserveStructure?: boolean;
-  overwriteExisting?: boolean;
-}
-
-// Value Objects
-export type ProjectId = string;
-export type FilePath = string;

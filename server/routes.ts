@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { projectService } from "./projectService";
+import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
 
@@ -134,8 +135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { title, description, category } = result.data;
       
-      // Extract and host the project
-      const projectData = await projectService.processUpload(req.file, {
+      // Extract and host the project using new SOLID architecture
+      const projectData = await newProjectService.processUpload(req.file, {
         title,
         description,
         category,
