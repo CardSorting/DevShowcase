@@ -28,10 +28,26 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== "application/zip" && !file.originalname.endsWith(".zip")) {
-      cb(new Error("Only ZIP files are allowed"));
+    // Accept a wider range of ZIP file MIME types and extensions
+    const acceptableMimeTypes = [
+      'application/zip', 
+      'application/x-zip-compressed', 
+      'application/octet-stream',
+      'multipart/x-zip'
+    ];
+    
+    const isZipMimeType = acceptableMimeTypes.includes(file.mimetype);
+    const isZipExtension = file.originalname.toLowerCase().endsWith('.zip');
+    
+    console.log(`File upload attempt - Name: ${file.originalname}, MIME: ${file.mimetype}`);
+    
+    if (!isZipMimeType && !isZipExtension) {
+      console.log(`Rejected file: ${file.originalname} (${file.mimetype}) - not a ZIP file`);
+      cb(new Error("Only ZIP files are allowed. Please upload a file with .zip extension."));
       return;
     }
+    
+    console.log(`Accepted file: ${file.originalname} (${file.mimetype})`);
     cb(null, true);
   }
 });
@@ -119,22 +135,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload project
   app.post("/api/projects", upload.single("file"), async (req: Request, res: Response) => {
     try {
+      console.log("Project upload received");
+      
       // Validate file
       if (!req.file) {
+        console.log("No file attached to the request");
         return res.status(400).json({ message: "No ZIP file provided" });
       }
+      
+      console.log(`File received: ${req.file.originalname} (${req.file.mimetype}), size: ${req.file.size} bytes, stored at: ${req.file.path}`);
       
       // Validate body
       const result = createProjectSchema.safeParse(req.body);
       if (!result.success) {
+        console.log("Form validation failed:", result.error.errors);
         // Clean up uploaded file on validation error
         await fs.unlink(req.file.path);
         return res.status(400).json({ message: result.error.errors[0].message });
       }
       
       const { title, description, category } = result.data;
+      console.log(`Project details: Title: ${title}, Category: ${category}, Description length: ${description.length} chars`);
       
       // Extract and host the project
+      console.log("Beginning project extraction and processing...");
       const projectData = await projectService.processUpload(req.file, {
         title,
         description,
