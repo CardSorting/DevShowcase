@@ -1,8 +1,9 @@
 import { IZipExtractor } from '../../domain/interfaces/IZipExtractor';
 import { ProjectFiles } from '../../domain/models/ZipProjectModel';
-import * as extract from 'extract-zip';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 
 /**
  * Implementation of ZIP extraction service
@@ -21,8 +22,9 @@ export class ExtractZipService implements IZipExtractor {
       // Ensure target directory exists
       await fs.mkdir(targetDir, { recursive: true });
       
-      // Extract the ZIP file
-      await extract(zipFilePath, { dir: path.resolve(targetDir) });
+      // Use system's unzip command
+      const execPromise = promisify(exec);
+      await execPromise(`unzip -o "${zipFilePath}" -d "${targetDir}"`);
       
       // Verify extraction by checking if directory has content
       const files = await fs.readdir(targetDir);
