@@ -74,81 +74,22 @@ class ProjectService {
   }
   
   /**
-   * Extract a ZIP file to a target directory with improved debugging
+   * Extract a ZIP file to a target directory
    */
   private async extractZip(zipPath: string, targetPath: string): Promise<void> {
-    console.log(`Extracting ZIP file from ${zipPath} to ${targetPath}`);
-    
     return new Promise((resolve, reject) => {
       try {
-        // Add logging for the file size and existence
-        const stats = fs.statSync(zipPath);
-        console.log(`ZIP file size: ${stats.size} bytes`);
-        
-        if (stats.size === 0) {
-          return reject(new Error("ZIP file is empty"));
-        }
-        
         const extractStream = unzip.Extract({ path: targetPath });
         
-        extractStream.on('error', (err) => {
-          console.error('Error during ZIP extraction:', err);
-          reject(err);
-        });
+        extractStream.on('error', reject);
+        extractStream.on('close', resolve);
         
-        extractStream.on('close', () => {
-          console.log('ZIP extraction completed successfully');
-          
-          // List extracted files for debugging
-          try {
-            const files = this.listFilesRecursive(targetPath);
-            console.log(`Extracted ${files.length} files:`, files.slice(0, 20));
-          } catch (err) {
-            console.warn('Could not list extracted files:', err);
-          }
-          
-          resolve();
-        });
-        
-        const readStream = fs.createReadStream(zipPath);
-        
-        readStream.on('error', (err) => {
-          console.error('Error reading ZIP file:', err);
-          reject(err);
-        });
-        
-        readStream.pipe(extractStream);
+        fs.createReadStream(zipPath)
+          .pipe(extractStream);
       } catch (error) {
-        console.error('Error setting up ZIP extraction:', error);
         reject(error);
       }
     });
-  }
-  
-  /**
-   * Helper to list all files in a directory recursively
-   */
-  private listFilesRecursive(dir: string): string[] {
-    const results: string[] = [];
-    
-    const list = (dir: string, base: string = '') => {
-      const files = fs.readdirSync(dir);
-      
-      for (const file of files) {
-        const fullPath = path.join(dir, file);
-        const relativePath = path.join(base, file);
-        const stat = fs.statSync(fullPath);
-        
-        if (stat.isDirectory()) {
-          list(fullPath, relativePath);
-        } else {
-          results.push(relativePath);
-        }
-      }
-    };
-    
-    list(dir);
-    return results;
   }
   
   /**
