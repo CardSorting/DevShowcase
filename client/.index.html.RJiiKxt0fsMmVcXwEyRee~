@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>DevShowcase - Showcase Your Web Projects</title>
+    <meta name="description" content="A platform for developers to showcase their web projects through a public gallery system. Upload your projects as ZIP files and get discovered by the developer community." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Open Graph tags for better social media sharing -->
+    <meta property="og:title" content="DevShowcase - Showcase Your Web Projects" />
+    <meta property="og:description" content="Upload your projects, get feedback, and gain recognition from the developer community." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://devshowcase.com" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
+    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+  </body>
+</html>
