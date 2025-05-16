@@ -78,12 +78,18 @@ export class DatabaseStorage implements IStorage {
     categoryCounts: { [key: string]: number };
   }> {
     return withRetry(async () => {
-      const { sort, categories, popularity, search, page, visitorId } = filters;
+      const { sort, categories, popularity, search, page, visitorId, userId } = filters;
       const pageSize = 8;
       const offset = (page - 1) * pageSize;
       
       // Build query conditions
       let queryConditions: any[] = [];
+      
+      // Filter by user ID if provided
+      if (userId !== undefined) {
+        // Filter for projects by this specific user
+        queryConditions.push(eq(projects.userId, userId));
+      }
       
       // Filter by categories if provided
       if (categories.length > 0) {

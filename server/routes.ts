@@ -183,6 +183,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get projects by user ID
+  app.get("/api/users/:userId/projects", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const {
+        sort = "recent",
+        categories,
+        popularity = "any",
+        search = "",
+        page = "1",
+      } = req.query;
+      
+      let categoriesArray: string[] = [];
+      if (categories && typeof categories === "string") {
+        categoriesArray = categories.split(",").filter(Boolean);
+      }
+      
+      const visitorId = getVisitorId(req);
+      
+      const result = await storage.getProjects({
+        sort: sort as string,
+        categories: categoriesArray,
+        popularity: popularity as string,
+        search: search as string,
+        page: parseInt(page as string, 10),
+        visitorId,
+        userId,
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ message: "Error fetching user projects" });
+    }
+  });
+  
+  // Get the current authenticated user's projects
+  app.get("/api/my/projects", async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated
+      if (!req.session?.isAuthenticated || !req.session?.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.session.user.id;
+      
+      const {
+        sort = "recent",
+        categories,
+        popularity = "any",
+        search = "",
+        page = "1",
+      } = req.query;
+      
+      let categoriesArray: string[] = [];
+      if (categories && typeof categories === "string") {
+        categoriesArray = categories.split(",").filter(Boolean);
+      }
+      
+      const visitorId = getVisitorId(req);
+      
+      const result = await storage.getProjects({
+        sort: sort as string,
+        categories: categoriesArray,
+        popularity: popularity as string,
+        search: search as string,
+        page: parseInt(page as string, 10),
+        visitorId,
+        userId,
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ message: "Error fetching user projects" });
+    }
+  });
+
   // Record a view for a project
   app.post("/api/projects/:id/view", async (req: Request, res: Response) => {
     try {
