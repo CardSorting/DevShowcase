@@ -8,6 +8,7 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
+// We'll implement a simplified auth system first
 
 // File upload configuration
 const upload = multer({
@@ -55,6 +56,26 @@ const createProjectSchema = z.object({
   }),
 });
 
+// Simple middleware for authentication
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  // In a real application, this would check for a valid session/token
+  // For now, we'll use a simple mock authentication system
+  
+  // For demo purposes, provide a way to "authenticate" via query param
+  const hasAuth = req.query.auth === 'true' || req.headers.authorization;
+  
+  if (!hasAuth) {
+    return res.status(401).json({
+      message: 'You must be logged in to upload projects',
+      requiresAuth: true
+    });
+  }
+  
+  // Mock user ID for authenticated requests
+  (req as any).userId = '12345';
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup paths for project files
   const projectsDir = path.join(process.cwd(), "projects");
@@ -64,6 +85,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/projects", express.static(projectsDir));
   
   // API Routes
+  
+  // Authentication routes (simplified)
+  app.post("/api/auth/login", (req, res) => {
+    // Simple mock login for demo purposes
+    const { username } = req.body;
+    res.json({
+      token: "mock_auth_token",
+      user: { id: "12345", username: username || "demo_user" }
+    });
+  });
   
   // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {
@@ -96,6 +127,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Error fetching projects" });
+    }
+  });
+  
+  // Get current user's projects
+  app.get("/api/user/projects", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const projects = await storage.getUserProjects(userId);
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ message: "Failed to fetch your projects" });
     }
   });
   

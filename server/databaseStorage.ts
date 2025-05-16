@@ -6,7 +6,7 @@ import {
   type ProjectLike,
   type InsertProjectLike,
   type User,
-  type InsertUser,
+  type UpsertUser,
   users,
   projects,
   projectViews,
@@ -41,7 +41,7 @@ const withRetry = async <T>(
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
@@ -55,10 +55,46 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async upsertUser(userData: UpsertUser): Promise<User> {
     return withRetry(async () => {
-      const [user] = await db.insert(users).values(insertUser).returning();
+      const [user] = await db
+        .insert(users)
+        .values({
+          ...userData,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
       return user;
+    });
+  }
+  
+  // Get all projects for a specific user
+  async getUserProjects(userId: string): Promise<ProjectType[]> {
+    return withRetry(async () => {
+      const projectsResult = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, userId))
+        .orderBy(desc(projects.createdAt));
+      
+      const enrichedProjects = projectsResult.map((project: any) => {
+        // Convert DB date to string format to match Project interface
+        return {
+          ...project,
+          createdAt: project.createdAt.toISOString(),
+          updatedAt: project.updatedAt.toISOString(),
+          isLiked: false // Default for user's own projects
+        } as unknown as ProjectType;
+      });
+      
+      return enrichedProjects;
     });
   }
 
