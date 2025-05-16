@@ -9,7 +9,7 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 if (!process.env.REPLIT_DOMAINS) {
-  console.warn("Environment variable REPLIT_DOMAINS not provided");
+  throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
 const getOidcConfig = memoize(
@@ -32,7 +32,7 @@ export function getSession() {
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET || "devshowcase-secret-key",
+    secret: process.env.SESSION_SECRET || "project-gallery-secret",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -57,14 +57,15 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
+  const userInfo = {
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
-    username: claims["preferred_username"] || claims["email"]?.split('@')[0] || claims["sub"],
-  });
+  };
+
+  return await storage.upsertUser(userInfo);
 }
 
 export async function setupAuth(app: Express) {
@@ -85,7 +86,8 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env.REPLIT_DOMAINS?.split(",") || ['localhost:5000']) {
+  for (const domain of process.env
+    .REPLIT_DOMAINS!.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -115,17 +117,6 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/auth/user", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user?.claims?.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
       res.redirect(
@@ -141,7 +132,7 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user?.expires_at) {
+  if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

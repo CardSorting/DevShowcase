@@ -210,10 +210,10 @@ export class DatabaseStorage implements IStorage {
       // Get all user ids needed
       const userIds = projectsResult
         .map((p: any) => p.userId)
-        .filter((id: any): id is string => id !== null);
+        .filter((id: any): id is number => id !== null);
         
       // Fetch all users in one query if there are any user IDs
-      const userMap = new Map<string, User>();
+      const userMap = new Map<number, User>();
       if (userIds.length > 0) {
         const usersResult = await db
           .select()

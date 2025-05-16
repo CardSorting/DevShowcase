@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -8,7 +8,6 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 
 // File upload configuration
 const upload = multer({
@@ -57,9 +56,6 @@ const createProjectSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication
-  await setupAuth(app);
-
   // Setup paths for project files
   const projectsDir = path.join(process.cwd(), "projects");
   await fs.mkdir(projectsDir, { recursive: true });
@@ -68,8 +64,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/projects", express.static(projectsDir));
   
   // API Routes
-  
-  // The user endpoint is handled in replitAuth.ts
   
   // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {
@@ -123,8 +117,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Upload project - requires authentication
-  app.post("/api/projects", isAuthenticated, upload.single("file"), async (req: Request, res: Response) => {
+  // Upload project
+  app.post("/api/projects", upload.single("file"), async (req: Request, res: Response) => {
     try {
       // Validate file
       if (!req.file) {
@@ -141,24 +135,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { title, description, category } = result.data;
       
-      // Get user information from session
-      const user = req.session.user;
-      let userId = undefined;
-      let username = "Anonymous";
-      
-      // Get user information from database if available
-      if (user) {
-        userId = user.id;
-        username = user.username || "Anonymous";
-      }
-      
       // Extract and host the project using new SOLID architecture
       const projectData = await newProjectService.processUpload(req.file, {
         title,
         description,
         category,
-        userId: userId || undefined, 
-        username, 
+        userId: 1, // Anonymous user for now
+        username: "Anonymous", // Default username
       });
       
       // Store project in the database
