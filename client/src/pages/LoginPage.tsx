@@ -46,24 +46,26 @@ export default function LoginPage() {
     },
   });
 
+  // Get the redirect path from URL query if present
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectPath = searchParams.get('redirect') || '/';
+
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
       await login.mutateAsync(values);
+      
       toast({
         title: "Login Successful",
         description: "You have been logged in successfully.",
       });
       
-      // Redirect based on user role
-      const data = await login.data;
-      if (data?.user?.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (data?.user?.role === "developer") {
-        navigate("/developer/dashboard");
+      // For simplicity, just redirect to the requested path or home
+      if (redirectPath !== '/') {
+        navigate(redirectPath);
       } else {
-        navigate("/"); // Regular users go to home
+        navigate("/"); // Go to home page
       }
     } catch (error) {
       toast({

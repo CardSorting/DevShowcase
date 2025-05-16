@@ -8,11 +8,11 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
+  method: string = 'GET',
   data?: unknown | undefined,
   formData?: FormData,
-): Promise<Response> {
+): Promise<any> {
   // If FormData is provided, use it directly without setting Content-Type (browser will set it with boundary)
   if (formData) {
     const res = await fetch(url, {
@@ -21,7 +21,7 @@ export async function apiRequest(
       credentials: "include",
     });
     await throwIfResNotOk(res);
-    return res;
+    return res.json();
   }
   
   // Otherwise handle normal JSON data
@@ -33,7 +33,7 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return res;
+  return res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

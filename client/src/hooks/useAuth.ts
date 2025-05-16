@@ -43,11 +43,7 @@ export function useAuth() {
   // Login mutation
   const login = useMutation({
     mutationFn: (credentials: LoginCredentials) => 
-      apiRequest('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      }),
+      apiRequest('/api/auth/login', 'POST', credentials),
     onSuccess: () => {
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
@@ -57,11 +53,7 @@ export function useAuth() {
   // Register mutation
   const register = useMutation({
     mutationFn: (data: RegisterData) => 
-      apiRequest('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/api/auth/register', 'POST', data),
     onSuccess: () => {
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
@@ -71,9 +63,7 @@ export function useAuth() {
   // Logout mutation
   const logout = useMutation({
     mutationFn: () => 
-      apiRequest('/api/auth/logout', {
-        method: 'POST',
-      }),
+      apiRequest('/api/auth/logout', 'POST'),
     onSuccess: () => {
       // Clear user data and refetch
       queryClient.setQueryData(['/api/auth/me'], null);
