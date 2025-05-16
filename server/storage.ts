@@ -6,8 +6,7 @@ import {
   type ProjectLike,
   type InsertProjectLike,
   type User,
-  type InsertUser,
-  type UpsertUser
+  type InsertUser
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { DatabaseStorage } from "./databaseStorage";
@@ -25,13 +24,12 @@ export interface ProjectFilters {
 // Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
   getUsersByRole(role: string): Promise<User[]>;
-  upsertUser(userData: UpsertUser): Promise<User>;
   
   // Project methods
   getProjects(filters: ProjectFilters): Promise<{
@@ -53,14 +51,10 @@ export interface IStorage {
   toggleProjectLike(projectId: number, visitorId: string): Promise<{ liked: boolean }>;
   
   // Permission methods
-  getUserPermissions(userId: string): Promise<{resource: string, action: string}[]>;
+  getUserPermissions(userId: number): Promise<{resource: string, action: string}[]>;
   addPermission(name: string, description: string, resource: string, action: string): Promise<{ id: number }>;
   addRolePermission(role: string, permissionId: number): Promise<{ id: number }>;
   removeRolePermission(role: string, permissionId: number): Promise<boolean>;
-  
-  // User projects methods
-  getProjectsByUser(userId: string): Promise<ProjectType[]>;
-  getProjectAnalytics(projectId: number): Promise<any>;
 }
 
 // Use the database storage implementation

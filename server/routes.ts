@@ -1,198 +1,218 @@
-import express, { Request, Response } from "express";
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
-import { createServer, Server } from "http";
-import { storage } from "./storage";
-import { setupSessions, isAuthenticated, login, logout, register, getCurrentUser } from "./auth";
+import fs from "fs/promises";
 import { projectService } from "./projectService";
-import { v4 as uuidv4 } from "uuid";
+import { newProjectService } from "./newProjectService";
+import { z } from "zod";
+import * as crypto from "crypto";
+import cookieParser from "cookie-parser";
+import authRoutes from "./domains/auth/authRoutes";
+import userProjectsRoutes from "./core/routes/userProjectsRoutes";
 
-// Set up multer for file uploads
+// File upload configuration
 const upload = multer({
-  dest: path.join(process.cwd(), "uploads"),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Create uploads directory if it doesn't exist
+      const uploadDir = path.join(process.cwd(), "uploads");
+      fs.mkdir(uploadDir, { recursive: true })
+        .then(() => cb(null, uploadDir))
+        .catch(err => cb(err, uploadDir));
+    },
+    filename: (req, file, cb) => {
+      // Create a unique filename
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+  }),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== "application/zip" && !file.originalname.endsWith(".zip")) {
+      cb(new Error("Only ZIP files are allowed"));
+      return;
+    }
+    cb(null, true);
+  }
 });
 
-// Helper to get visitor ID for view/like tracking
+// Visitor ID generator for tracking views and likes
 function getVisitorId(req: Request): string {
-  if (!req.session.visitorId) {
-    req.session.visitorId = uuidv4();
-  }
-  return req.session.visitorId;
+  // Use a hash of IP address and user agent as a simple visitor ID
+  // In a production app, this would be more sophisticated
+  const ip = req.ip || req.socket.remoteAddress || "";
+  const userAgent = req.headers["user-agent"] || "";
+  return crypto.createHash("md5").update(`${ip}-${userAgent}`).digest("hex");
 }
 
-export async function registerRoutes(app: express.Express): Promise<Server> {
-  // Set up authentication middleware
-  setupSessions(app);
+// Zod schema for project creation
+const createProjectSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title cannot exceed 100 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").max(1000, "Description cannot exceed 1000 characters"),
+  category: z.enum(["landing-page", "web-app", "portfolio", "game", "ecommerce", "other"], {
+    errorMap: () => ({ message: "Invalid category" })
+  }),
+});
 
-  // Auth routes
-  app.post("/api/auth/login", login);
-  app.post("/api/auth/register", register);
-  app.get("/api/auth/logout", logout);
-  app.get("/api/auth/user", getCurrentUser);
-
-  // Projects listing with filters and pagination
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup paths for project files
+  const projectsDir = path.join(process.cwd(), "projects");
+  await fs.mkdir(projectsDir, { recursive: true });
+  
+  // Middleware
+  app.use(cookieParser());
+  
+  // Store storage in app.locals for easy access in routes
+  app.locals.storage = storage;
+  
+  // Authentication routes
+  app.use('/api/auth', authRoutes);
+  
+  // User projects routes with SOLID architecture
+  app.use('/api', userProjectsRoutes);
+  
+  // Serve project files
+  app.use("/projects", express.static(projectsDir));
+  
+  // API Routes
+  
+  // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {
     try {
-      const { sort = "newest", category = "", search = "", page = "1", popular = "" } = req.query;
+      const {
+        sort = "popular",
+        categories,
+        popularity = "any",
+        search = "",
+        page = "1",
+      } = req.query;
       
-      const filters = {
+      let categoriesArray: string[] = [];
+      if (categories && typeof categories === "string") {
+        categoriesArray = categories.split(",").filter(Boolean);
+      }
+      
+      const visitorId = getVisitorId(req);
+      
+      const result = await storage.getProjects({
         sort: sort as string,
-        categories: category ? [category as string] : [],
-        popularity: popular as string,
+        categories: categoriesArray,
+        popularity: popularity as string,
         search: search as string,
-        page: parseInt(page as string, 10) || 1,
-        visitorId: getVisitorId(req)
-      };
+        page: parseInt(page as string, 10),
+        visitorId,
+      });
       
-      const result = await storage.getProjects(filters);
       res.json(result);
     } catch (error) {
-      console.error("Error getting projects:", error);
-      res.status(500).json({ message: "Failed to get projects" });
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ message: "Error fetching projects" });
     }
   });
-
-  // Get project by ID
+  
+  // Get project by id
   app.get("/api/projects/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
-      const project = await storage.getProjectById(id, getVisitorId(req));
+      const visitorId = getVisitorId(req);
       
+      const project = await storage.getProjectById(id, visitorId);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
       
       res.json(project);
     } catch (error) {
-      console.error("Error getting project:", error);
-      res.status(500).json({ message: "Failed to get project" });
+      console.error("Error fetching project:", error);
+      res.status(500).json({ message: "Error fetching project" });
     }
   });
-
-  // Upload new project
-  app.post("/api/projects", isAuthenticated, upload.single("file"), async (req: Request, res: Response) => {
+  
+  // Upload project
+  app.post("/api/projects", upload.single("file"), async (req: Request, res: Response) => {
     try {
+      // Validate file
       if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+        return res.status(400).json({ message: "No ZIP file provided" });
       }
-
-      const { title, description, category } = req.body;
       
-      if (!title || !description || !category) {
-        return res.status(400).json({ message: "Missing required fields" });
+      // Validate body
+      const result = createProjectSchema.safeParse(req.body);
+      if (!result.success) {
+        // Clean up uploaded file on validation error
+        await fs.unlink(req.file.path);
+        return res.status(400).json({ message: result.error.errors[0].message });
       }
-
-      const user = req.user as any;
       
-      // Process the uploaded ZIP file
-      const projectData = await projectService.processUpload(req.file, {
-        title, 
-        description, 
+      const { title, description, category } = result.data;
+      
+      // Extract and host the project using new SOLID architecture
+      const projectData = await newProjectService.processUpload(req.file, {
+        title,
+        description,
         category,
-        userId: user.id,
-        username: user.username || 'Anonymous'
+        userId: 1, // Anonymous user for now
+        username: "Anonymous", // Default username
       });
       
-      // Save to database
+      // Store project in the database
       const project = await storage.createProject(projectData);
       
       res.status(201).json({
         id: project.id,
         title: project.title,
-        projectUrl: project.projectUrl
+        projectUrl: project.projectUrl,
       });
     } catch (error) {
       console.error("Error uploading project:", error);
-      res.status(500).json({ message: "Failed to upload project" });
+      // Clean up uploaded file on error
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (cleanupError) {
+          console.error("Failed to clean up file after error:", cleanupError);
+        }
+      }
+      
+      res.status(500).json({ message: error instanceof Error ? error.message : "Error uploading project" });
     }
   });
-
-  // Record a project view
+  
+  // Record a view for a project
   app.post("/api/projects/:id/view", async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id, 10);
+      const id = parseInt(req.params.id, 10);
       const visitorId = getVisitorId(req);
       
-      await storage.recordProjectView(projectId, visitorId);
-      res.json({ success: true });
+      await storage.recordProjectView(id, visitorId);
+      res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error recording view:", error);
-      res.status(500).json({ message: "Failed to record view" });
+      res.status(500).json({ message: "Error recording view" });
     }
   });
-
-  // Toggle like on a project
+  
+  // Like/unlike a project
   app.post("/api/projects/:id/like", async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id, 10);
+      const id = parseInt(req.params.id, 10);
       const visitorId = getVisitorId(req);
       
-      const result = await storage.toggleProjectLike(projectId, visitorId);
-      res.json(result);
+      const result = await storage.toggleProjectLike(id, visitorId);
+      res.status(200).json({ success: true, liked: result.liked });
     } catch (error) {
       console.error("Error toggling like:", error);
-      res.status(500).json({ message: "Failed to toggle like" });
+      res.status(500).json({ message: "Error toggling like" });
     }
   });
-
-  // User projects routes
-  app.get("/api/users/:userId/projects", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      
-      // Check if user is requesting their own projects or is an admin
-      const user = req.user as any;
-      const isOwnProjects = user.id === userId;
-      const isAdmin = user.role === 'admin';
-      
-      if (!isOwnProjects && !isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      const projects = await storage.getProjectsByUser(userId);
-      res.json({
-        projects,
-        totalCount: projects.length
-      });
-    } catch (error) {
-      console.error("Error getting user projects:", error);
-      res.status(500).json({ message: "Failed to get user projects" });
-    }
-  });
-
-  // Get project analytics
-  app.get("/api/users/:userId/projects/:projectId/analytics", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      const projectId = parseInt(req.params.projectId, 10);
-      
-      // Check if user is requesting their own project or is an admin
-      const user = req.user as any;
-      const isOwnProject = user.id === userId;
-      const isAdmin = user.role === 'admin';
-      
-      if (!isOwnProject && !isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      // Get project first to verify ownership
-      const project = await storage.getProjectById(projectId);
-      
-      if (!project || project.userId !== userId) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-      
-      // Get project analytics data
-      const analytics = await storage.getProjectAnalytics(projectId);
-      res.json(analytics);
-    } catch (error) {
-      console.error("Error getting project analytics:", error);
-      res.status(500).json({ message: "Failed to get analytics" });
-    }
-  });
-
-  // Create HTTP server
+  
   const httpServer = createServer(app);
   return httpServer;
 }
+
+// Import express since it's used in the static path declaration
+import express from "express";
