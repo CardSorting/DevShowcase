@@ -6,8 +6,7 @@ import {
   type ProjectLike,
   type InsertProjectLike,
   type User,
-  type InsertUser,
-  type UpsertUser
+  type InsertUser
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { DatabaseStorage } from "./databaseStorage";
