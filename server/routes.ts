@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -8,6 +8,7 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 // File upload configuration
 const upload = multer({

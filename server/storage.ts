@@ -25,9 +25,8 @@ export interface ProjectFilters {
 // Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Project methods
   getProjects(filters: ProjectFilters): Promise<{
