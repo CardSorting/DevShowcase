@@ -10,6 +10,7 @@ import { z } from "zod";
 import * as crypto from "crypto";
 import cookieParser from "cookie-parser";
 import authRoutes from "./domains/auth/authRoutes";
+import userProjectsRoutes from "./core/routes/userProjectsRoutes";
 
 // File upload configuration
 const upload = multer({
@@ -70,6 +71,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication routes
   app.use('/api/auth', authRoutes);
+  
+  // User projects routes with SOLID architecture
+  app.use('/api', userProjectsRoutes);
   
   // Serve project files
   app.use("/projects", express.static(projectsDir));

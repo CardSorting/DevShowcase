@@ -11,6 +11,7 @@ import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import DeveloperDashboardPage from "@/pages/DeveloperDashboardPage";
 import UploadPage from "@/pages/UploadPage";
 import ProfilePage from "@/pages/ProfilePage";
+import UserProjectsPage from "@/pages/UserProjectsPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/profile" component={ProfilePage} />
       <Route path="/admin/dashboard" component={AdminDashboardPage} />
       <Route path="/developer/dashboard" component={DeveloperDashboardPage} />
+      <Route path="/user/:userId/projects" component={UserProjectsPage} />
       <Route path="/:rest*" component={NotFound} />
     </Switch>
   );

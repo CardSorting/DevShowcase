@@ -169,6 +169,10 @@ export default function Header() {
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       <span>Dashboard</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/user/${user?.id}/projects`)}>
+                      <Code className="mr-2 h-4 w-4" />
+                      <span>My Projects</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
