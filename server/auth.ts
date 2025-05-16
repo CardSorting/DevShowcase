@@ -161,9 +161,14 @@ authRouter.get('/callback/github', async (req, res) => {
 
 // Auth status route
 authRouter.get('/status', (req, res) => {
+  console.log('Auth status request received');
+  console.log('Session:', req.session);
+  
   if (req.session?.isAuthenticated && req.session?.user) {
     const user = req.session.user;
-    res.json({
+    console.log('User authenticated, returning user data:', user);
+    
+    const userData = {
       isAuthenticated: true,
       user: {
         id: user.id,
@@ -171,8 +176,12 @@ authRouter.get('/status', (req, res) => {
         displayName: user.displayName || user.username,
         avatar: user.avatarUrl
       }
-    });
+    };
+    
+    console.log('Sending user data:', userData);
+    res.json(userData);
   } else {
+    console.log('User not authenticated');
     res.json({ isAuthenticated: false });
   }
 });

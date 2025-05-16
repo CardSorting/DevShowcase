@@ -26,11 +26,25 @@ interface AuthStatus {
 export default function AuthButton() {
   const { toast } = useToast();
 
-  // Fetch authentication status
-  const { data: authStatus, isLoading, refetch } = useQuery<AuthStatus>({
+  // Fetch authentication status with proper URL
+  const { data: authStatus, isLoading, isError, error, refetch } = useQuery<AuthStatus>({
     queryKey: ["/auth/status"],
     refetchOnWindowFocus: true,
+    refetchInterval: 5000, // Refetch every 5 seconds to ensure up-to-date auth status
+    retry: 3, // Retry failed requests
+    queryFn: async () => {
+      const response = await fetch('/auth/status', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch auth status');
+      }
+      return response.json();
+    }
   });
+  
+  // Log any errors
+  if (isError) {
+    console.error('Error fetching auth status:', error);
+  }
 
   // Handle logout
   const handleLogout = async () => {
@@ -67,6 +81,7 @@ export default function AuthButton() {
 
   // Show login button if not authenticated
   if (!authStatus?.isAuthenticated) {
+    console.log("Auth Status: Not authenticated", authStatus);
     return (
       <Button onClick={handleGitHubLogin} variant="outline" size="sm">
         <Github className="h-4 w-4 mr-2" />
@@ -74,6 +89,8 @@ export default function AuthButton() {
       </Button>
     );
   }
+  
+  console.log("Auth Status: Authenticated", authStatus);
 
   // Show user profile dropdown if authenticated
   return (
@@ -82,10 +99,15 @@ export default function AuthButton() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             {authStatus.user?.avatar ? (
-              <AvatarImage src={authStatus.user.avatar} alt={authStatus.user.displayName || authStatus.user.username} />
+              <AvatarImage 
+                src={authStatus.user.avatar} 
+                alt={authStatus.user.displayName || authStatus.user.username} 
+              />
             ) : (
               <AvatarFallback>
-                {authStatus.user?.displayName?.[0] || authStatus.user?.username?.[0] || "U"}
+                {authStatus.user?.displayName?.[0]?.toUpperCase() || 
+                 authStatus.user?.username?.[0]?.toUpperCase() || 
+                 "U"}
               </AvatarFallback>
             )}
           </Avatar>
