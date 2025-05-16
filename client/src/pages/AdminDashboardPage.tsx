@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { Helmet } from "react-helmet";
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ export default function AdminDashboardPage() {
   // Redirect if not authenticated or not an admin
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate("/login?redirect=/admin/dashboard");
       toast({
         title: "Authentication Required",
         description: "Please log in to access the admin dashboard.",

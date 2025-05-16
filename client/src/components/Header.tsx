@@ -48,7 +48,7 @@ export default function Header() {
   const getDashboardLink = () => {
     if (isAdmin) return "/admin/dashboard";
     if (isDeveloper) return "/developer/dashboard";
-    return "/";
+    return "/"; // Regular users don't have a dashboard
   };
   
   return (
