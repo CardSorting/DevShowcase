@@ -119,13 +119,31 @@ export default function UserProjectsPage() {
   // Fetch user's projects with analytics
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: [`/api/user/${userId}/projects`],
-    enabled: isAuthenticated && (user?.id === userId || user?.role.includes('admin')),
+    enabled: isAuthenticated && (user?.id === userId || user?.role === 'admin'),
+    retry: false,
+    onError: (error: any) => {
+      console.error("Error fetching projects:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to load your projects. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Fetch detailed analytics for selected project
   const { data: selectedProjectData, isLoading: isLoadingProjectDetails } = useQuery({
     queryKey: [`/api/user/${userId}/projects/${selectedProject}`],
-    enabled: !!selectedProject,
+    enabled: !!selectedProject && isAuthenticated,
+    retry: false,
+    onError: (error: any) => {
+      console.error("Error fetching project details:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to load project details. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   if (!isAuthenticated) {

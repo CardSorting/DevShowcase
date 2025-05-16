@@ -5,6 +5,23 @@ import {
 } from "../application/UserProjectsService";
 import { PostgresUserProjectsRepository } from "../infrastructure/UserProjectsRepository";
 
+// Define the user object type to match what our auth middleware attaches
+interface AuthUser {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+  }
+}
+
 /**
  * Controller for user projects API using CQRS pattern
  * Responsible for HTTP request handling and response formatting
@@ -27,12 +44,20 @@ export class UserProjectsController {
     try {
       const userId = parseInt(req.params.userId, 10);
       
-      // Validate user has access to this data
-      // In a real application, check if current user is requesting their own data or has admin access
-      // For simplicity, we're allowing access in this example
-      const requestingUserId = req.user?.id || 0;
+      // Get the authenticated user
+      const currentUser = req.user;
       
-      if (requestingUserId !== userId && requestingUserId !== 0) {
+      // Check if user is authenticated
+      if (!currentUser) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+      
+      // Verify user has access to this data (their own data or admin access)
+      const isAdmin = currentUser.role === 'admin';
+      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      
+      if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this user's projects" });
         return;
       }
@@ -58,11 +83,21 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Validate user has access to this project
-      const requestingUserId = req.user?.id || 0;
+      // Get the authenticated user
+      const currentUser = req.user;
       
-      if (requestingUserId !== userId && requestingUserId !== 0) {
-        res.status(403).json({ message: "You don't have permission to access this project" });
+      // Check if user is authenticated
+      if (!currentUser) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+      
+      // Verify user has access to this project
+      const isAdmin = currentUser.role === 'admin';
+      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      
+      if (!isOwnData && !isAdmin) {
+        res.status(403).json({ message: "You don't have permission to access this project's analytics" });
         return;
       }
       
@@ -84,11 +119,21 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Validate user has access to this project
-      const requestingUserId = req.user?.id || 0;
+      // Get the authenticated user
+      const currentUser = req.user;
       
-      if (requestingUserId !== userId && requestingUserId !== 0) {
-        res.status(403).json({ message: "You don't have permission to access this project" });
+      // Check if user is authenticated
+      if (!currentUser) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+      
+      // Verify user has access to this project
+      const isAdmin = currentUser.role === 'admin';
+      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      
+      if (!isOwnData && !isAdmin) {
+        res.status(403).json({ message: "You don't have permission to access this project's engagement metrics" });
         return;
       }
       
@@ -110,10 +155,20 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Validate user has access to this project
-      const requestingUserId = req.user?.id || 0;
+      // Get the authenticated user
+      const currentUser = req.user;
       
-      if (requestingUserId !== userId && requestingUserId !== 0) {
+      // Check if user is authenticated
+      if (!currentUser) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+      
+      // Verify user has access to this project
+      const isAdmin = currentUser.role === 'admin';
+      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      
+      if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project" });
         return;
       }
