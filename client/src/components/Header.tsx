@@ -1,17 +1,97 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Heart, Bell, Code } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Search, Heart, Bell, Code, LogIn, LogOut, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "../hooks/useAuth";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { toast } = useToast();
+  
+  // Use the authentication hook
+  const { user, isLoading, isAuthenticated } = useAuth();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Navigate to gallery with search query
     navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+  };
+  
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!username.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a username",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsLoggingIn(true);
+    
+    try {
+      await apiRequest("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ username }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      // Refetch the user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      setLoginDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "You are now logged in!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Login failed. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+  
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout");
+      // Refetch the user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "You have been logged out",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Logout failed. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -41,22 +121,92 @@ export default function Header() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {isAuthenticated && (
+              <Link href="/upload" className="text-gray-500 hover:text-primary">
+                <Upload className="h-5 w-5" />
+              </Link>
+            )}
+            
             <button className="text-gray-500 hover:text-primary">
               <Heart className="h-5 w-5" />
             </button>
-            <button className="text-gray-500 hover:text-primary">
-              <Bell className="h-5 w-5" />
-            </button>
-            <div className="relative">
-              <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </button>
-            </div>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Avatar className="h-8 w-8">
+                    {user?.profileImageUrl ? (
+                      <AvatarImage src={user.profileImageUrl} alt={user.username || "User"} />
+                    ) : (
+                      <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="text-sm font-medium hidden md:block">
+                    {user?.username || "User"}
+                  </span>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="flex items-center"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  <span className="hidden md:block">Logout</span>
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setLoginDialogOpen(true)}
+                className="flex items-center"
+              >
+                <LogIn className="h-4 w-4 mr-1" />
+                <span>Login</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Login Dialog */}
+      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login to DevShowcase</DialogTitle>
+            <DialogDescription>
+              Enter a username to log in or create an account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleLogin} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label htmlFor="username" className="text-sm font-medium">
+                Username
+              </label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                disabled={isLoggingIn}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                disabled={isLoggingIn || !username.trim()}
+                className="w-full"
+              >
+                {isLoggingIn ? "Logging in..." : "Login"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
