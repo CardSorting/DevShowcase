@@ -93,7 +93,7 @@ export const authController = {
         password,
         firstName,
         lastName,
-        role: 'user', // Default role for new users
+        role: 'developer', // Default role for new users
         isActive: true,
       });
       
