@@ -1,12 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { Search, Heart, Bell, Code } from "lucide-react";
+import { Search, Heart, Bell, Code, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import AuthButton from "./AuthButton";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
+  
+  // Fetch authentication status
+  const { data: authStatus } = useQuery({
+    queryKey: ["/auth/status"],
+    retry: 1,
+  });
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +54,15 @@ export default function Header() {
             <button className="text-gray-500 hover:text-primary">
               <Bell className="h-5 w-5" />
             </button>
+            
+            {/* Show My Projects button when user is authenticated */}
+            {authStatus?.isAuthenticated && (
+              <Link href="/my/projects" className="flex items-center text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium">
+                <User className="h-4 w-4 mr-1" />
+                My Projects
+              </Link>
+            )}
+            
             <AuthButton />
           </div>
         </div>

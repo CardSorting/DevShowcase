@@ -148,6 +148,12 @@ export default function AuthButton() {
             <p className="text-sm text-muted-foreground">@{authStatus.user?.username}</p>
           </div>
         </div>
+        <DropdownMenuItem asChild>
+          <a href="/my/projects" className="cursor-pointer">
+            <User className="h-4 w-4 mr-2" />
+            My Projects
+          </a>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
           <LogOut className="h-4 w-4 mr-2" /> 
           Logout
