@@ -18,7 +18,7 @@ authRouter.get('/github', (req, res) => {
 });
 
 // GitHub callback route
-authRouter.get('/github/callback', async (req, res) => {
+authRouter.get('/callback/github', async (req, res) => {
   try {
     const code = req.query.code as string;
     
