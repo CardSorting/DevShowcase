@@ -6,7 +6,11 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
+  githubId: text("github_id").unique(),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
+  email: text("email"),
 });
 
 // Projects table
@@ -46,9 +50,8 @@ export const projectLikes = pgTable("project_likes", {
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
 });
 
 export const insertProjectSchema = createInsertSchema(projects)
