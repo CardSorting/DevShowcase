@@ -54,6 +54,13 @@ export class DatabaseStorage implements IStorage {
       return user;
     });
   }
+  
+  async getUserByGithubId(githubId: string): Promise<User | undefined> {
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.githubId, githubId));
+      return user;
+    });
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return withRetry(async () => {

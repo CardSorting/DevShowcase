@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { storage } from './storage';
 import dotenv from 'dotenv';
+import { User } from '@shared/schema';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -12,7 +13,7 @@ passport.use(new GitHubStrategy({
     clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
     callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:5000/auth/github/callback'
   },
-  async (accessToken, refreshToken, profile, done) => {
+  async (accessToken: string, refreshToken: string, profile: any, done: (error: Error | null, user?: any) => void) => {
     try {
       // Check if user already exists with GitHub ID
       let user = await storage.getUserByGithubId(profile.id);
@@ -46,8 +47,15 @@ passport.use(new GitHubStrategy({
   }
 ));
 
+// Define types for passport serialization
+declare global {
+  namespace Express {
+    interface User extends User {}
+  }
+}
+
 // Serialize user ID to session
-passport.serializeUser((user: any, done) => {
+passport.serializeUser((user: User, done) => {
   done(null, user.id);
 });
 
