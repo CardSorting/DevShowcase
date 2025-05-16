@@ -131,24 +131,20 @@ export class DatabaseStorage implements IStorage {
       let projectsResult;
       
       // We need to handle the query building differently due to TypeScript limitations
+      const baseQuery = db.select().from(projects).where(whereCondition);
+      
       if (sort === "recent") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
+        projectsResult = await baseQuery
           .orderBy(desc(projects.createdAt))
           .limit(pageSize)
           .offset(offset);
       } else if (sort === "views") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
+        projectsResult = await baseQuery
           .orderBy(desc(projects.views))
           .limit(pageSize)
           .offset(offset);
       } else if (sort === "trending") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
+        projectsResult = await baseQuery
           .orderBy(desc(projects.trending))
           .orderBy(desc(projects.views))
           .orderBy(desc(projects.likes))
@@ -156,9 +152,7 @@ export class DatabaseStorage implements IStorage {
           .offset(offset);
       } else {
         // Popular is the default sort - by likes
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
+        projectsResult = await baseQuery
           .orderBy(desc(projects.likes))
           .limit(pageSize)
           .offset(offset);

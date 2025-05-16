@@ -5,12 +5,23 @@ import { Search, Heart, Bell, Code, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import AuthButton from "./AuthButton";
 
+// Define the auth status interface
+interface AuthStatus {
+  isAuthenticated: boolean;
+  user?: {
+    id: number;
+    username: string;
+    displayName?: string;
+    avatar?: string;
+  };
+}
+
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   
   // Fetch authentication status
-  const { data: authStatus } = useQuery({
+  const { data: authStatus } = useQuery<AuthStatus>({
     queryKey: ["/auth/status"],
     retry: 1,
   });
@@ -19,6 +30,13 @@ export default function Header() {
     e.preventDefault();
     // Navigate to gallery with search query
     navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+  };
+  
+  // Determine active navigation item based on URL
+  const isActive = (path: string) => {
+    if (path === '/' && location === '/') return true;
+    if (path.startsWith('/?') && location.includes(path.substring(2))) return true;
+    return false;
   };
   
   return (
@@ -65,6 +83,60 @@ export default function Header() {
             
             <AuthButton />
           </div>
+        </div>
+      </div>
+      
+      {/* Navigation Bar */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex -mb-px">
+            <Link 
+              href="/" 
+              className={`px-5 py-3 text-sm font-medium border-b-2 ${
+                isActive('/') 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
+              }`}
+            >
+              Home
+            </Link>
+            <Link 
+              href="/?sort=popular" 
+              className={`px-5 py-3 text-sm font-medium border-b-2 ${
+                isActive('/?sort=popular') 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
+              }`}
+            >
+              Popular
+            </Link>
+            <Link 
+              href="/?sort=recent" 
+              className={`px-5 py-3 text-sm font-medium border-b-2 ${
+                isActive('/?sort=recent') 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
+              }`}
+            >
+              Latest
+            </Link>
+            <Link 
+              href="/?sort=trending" 
+              className={`px-5 py-3 text-sm font-medium border-b-2 ${
+                isActive('/?sort=trending') 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
+              }`}
+            >
+              Trending
+            </Link>
+            <Link 
+              href="/#upload" 
+              className="px-5 py-3 text-sm font-medium border-b-2 border-transparent hover:border-primary text-primary hover:text-primary-dark"
+            >
+              Submit Project
+            </Link>
+          </nav>
         </div>
       </div>
     </header>
