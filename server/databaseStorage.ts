@@ -7,14 +7,10 @@ import {
   type InsertProjectLike,
   type User,
   type InsertUser,
-  type Permission,
-  type RolePermission,
   users,
   projects,
   projectViews,
-  projectLikes,
-  permissions,
-  rolePermissions
+  projectLikes
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { db, pool } from "./db";
@@ -58,39 +54,11 @@ export class DatabaseStorage implements IStorage {
       return user;
     });
   }
-  
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
-    });
-  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return withRetry(async () => {
       const [user] = await db.insert(users).values(insertUser).returning();
       return user;
-    });
-  }
-  
-  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [updatedUser] = await db
-        .update(users)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(users.id, id))
-        .returning();
-        
-      return updatedUser;
-    });
-  }
-  
-  async getUsersByRole(role: string): Promise<User[]> {
-    return withRetry(async () => {
-      return await db
-        .select()
-        .from(users)
-        .where(eq(users.role, role as any));
     });
   }
 
@@ -439,87 +407,6 @@ export class DatabaseStorage implements IStorage {
         );
       
       return !!existingLike;
-    });
-  }
-  
-  // Permission methods
-  async getUserPermissions(userId: number): Promise<{resource: string, action: string}[]> {
-    return withRetry(async () => {
-      // Get user role
-      const user = await this.getUser(userId);
-      if (!user) {
-        return [];
-      }
-      
-      // Get permissions for the user's role
-      const rolePermsResult = await db
-        .select({
-          permissionId: rolePermissions.permissionId,
-        })
-        .from(rolePermissions)
-        .where(eq(rolePermissions.role, user.role as any));
-      
-      if (rolePermsResult.length === 0) {
-        return [];
-      }
-      
-      // Get the permission details
-      const permissionIds = rolePermsResult.map(rp => rp.permissionId);
-      const permissionsResult = await db
-        .select({
-          resource: permissions.resource,
-          action: permissions.action
-        })
-        .from(permissions)
-        .where(inArray(permissions.id, permissionIds));
-      
-      return permissionsResult;
-    });
-  }
-  
-  async addPermission(name: string, description: string, resource: string, action: string): Promise<{ id: number }> {
-    return withRetry(async () => {
-      const [result] = await db
-        .insert(permissions)
-        .values({
-          name,
-          description,
-          resource,
-          action
-        })
-        .returning({ id: permissions.id });
-      
-      return result;
-    });
-  }
-  
-  async addRolePermission(role: string, permissionId: number): Promise<{ id: number }> {
-    return withRetry(async () => {
-      // Cast the role to any to avoid TypeScript issues with enum types
-      const [result] = await db
-        .insert(rolePermissions)
-        .values({
-          role: role as any,
-          permissionId
-        })
-        .returning({ id: rolePermissions.id });
-      
-      return result;
-    });
-  }
-  
-  async removeRolePermission(role: string, permissionId: number): Promise<boolean> {
-    return withRetry(async () => {
-      const result = await db
-        .delete(rolePermissions)
-        .where(
-          and(
-            eq(rolePermissions.role, role as any),
-            eq(rolePermissions.permissionId, permissionId)
-          )
-        );
-      
-      return result.rowCount !== null && result.rowCount > 0;
     });
   }
 }

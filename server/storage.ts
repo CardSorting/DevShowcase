@@ -26,10 +26,7 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
-  getUsersByRole(role: string): Promise<User[]>;
   
   // Project methods
   getProjects(filters: ProjectFilters): Promise<{
@@ -49,12 +46,6 @@ export interface IStorage {
   
   // Like tracking
   toggleProjectLike(projectId: number, visitorId: string): Promise<{ liked: boolean }>;
-  
-  // Permission methods
-  getUserPermissions(userId: number): Promise<{resource: string, action: string}[]>;
-  addPermission(name: string, description: string, resource: string, action: string): Promise<{ id: number }>;
-  addRolePermission(role: string, permissionId: number): Promise<{ id: number }>;
-  removeRolePermission(role: string, permissionId: number): Promise<boolean>;
 }
 
 // Use the database storage implementation

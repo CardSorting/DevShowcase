@@ -1,23 +1,12 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Role enum for RBAC
-export const roleEnum = pgEnum('role', ['admin', 'developer', 'user']);
-
-// Users table with role-based access control
+// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  email: varchar("email").notNull().unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  role: roleEnum("role").default('user').notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  lastLogin: timestamp("last_login"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Projects table
@@ -56,31 +45,10 @@ export const projectLikes = pgTable("project_likes", {
   likedAt: timestamp("liked_at").defaultNow().notNull(),
 });
 
-// Permissions table
-export const permissions = pgTable("permissions", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull().unique(),
-  description: text("description"),
-  resource: varchar("resource", { length: 50 }).notNull(),
-  action: varchar("action", { length: 50 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Role permissions mapping
-export const rolePermissions = pgTable("role_permissions", {
-  id: serial("id").primaryKey(),
-  role: roleEnum("role").notNull(),
-  permissionId: integer("permission_id").references(() => permissions.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  lastLogin: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
 });
 
 export const insertProjectSchema = createInsertSchema(projects)
@@ -92,21 +60,9 @@ export const insertProjectViewSchema = createInsertSchema(projectViews)
 export const insertProjectLikeSchema = createInsertSchema(projectLikes)
   .omit({ id: true, likedAt: true });
 
-export const insertPermissionSchema = createInsertSchema(permissions)
-  .omit({ id: true, createdAt: true, updatedAt: true });
-
-export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
-  .omit({ id: true, createdAt: true });
-
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-
-export type InsertPermission = z.infer<typeof insertPermissionSchema>;
-export type Permission = typeof permissions.$inferSelect;
-
-export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
-export type RolePermission = typeof rolePermissions.$inferSelect;
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
