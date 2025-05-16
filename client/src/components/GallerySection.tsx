@@ -35,15 +35,25 @@ export default function GallerySection() {
     setPage(1);
   }, [sortBy, selectedCategories, popularityFilter, searchQuery]);
   
+  // Build the query URL with parameters
+  const buildQueryUrl = () => {
+    const params = new URLSearchParams();
+    params.append('sort', sortBy);
+    if (selectedCategories.length > 0) {
+      params.append('categories', selectedCategories.join(','));
+    }
+    params.append('popularity', popularityFilter);
+    if (searchQuery) {
+      params.append('search', searchQuery);
+    }
+    params.append('page', page.toString());
+    
+    return `/api/projects?${params.toString()}`;
+  };
+  
   // Fetch projects
   const { data, isLoading, error } = useQuery<ProjectList>({
-    queryKey: ['/api/projects', {
-      sort: sortBy,
-      categories: selectedCategories.join(','),
-      popularity: popularityFilter,
-      search: searchQuery,
-      page
-    }],
+    queryKey: [buildQueryUrl()],
   });
   
   if (error) {
