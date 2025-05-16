@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Swarm</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-container">Score: <span id="score">0</span></div>
+            <div class="lives-container">Lives: <span id="lives">3</span></div>
+            <div class="high-score-container">High Score: <span id="highScore">0</span></div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="startScreen" class="screen">
+            <h1>NOVA SWARM</h1>
+            <p>Use arrow keys to move, spacebar to shoot</p>
+            <button id="startButton">START GAME</button>
+        </div>
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>GAME OVER</h1>
+            <p>Your score: <span id="finalScore">0</span></p>
+            <button id="restartButton">PLAY AGAIN</button>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/entity.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/bullets.js"></script>
+    <script src="js/explosions.js"></script>
+    <script src="js/powerups.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
