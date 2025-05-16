@@ -8,7 +8,8 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+// Import our simplified auth implementation
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./simpleAuth";
 
 // File upload configuration
 const upload = multer({
@@ -57,6 +58,9 @@ const createProjectSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  registerAuthRoutes(app);
   // Setup paths for project files
   const projectsDir = path.join(process.cwd(), "projects");
   await fs.mkdir(projectsDir, { recursive: true });
@@ -118,8 +122,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Upload project
-  app.post("/api/projects", upload.single("file"), async (req: Request, res: Response) => {
+  // Upload project - requires authentication
+  app.post("/api/projects", isAuthenticated, upload.single("file"), async (req: any, res: Response) => {
     try {
       // Validate file
       if (!req.file) {
@@ -136,13 +140,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { title, description, category } = result.data;
       
+      // For now, use a demo user ID for all uploads until authentication is fully implemented
+      const userId = 'demo-user';
+      const username = 'Demo User';
+      
+      // Check if demo user exists and create if not
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        await storage.upsertUser({
+          id: userId,
+          email: 'demo@example.com',
+          firstName: 'Demo',
+          lastName: 'User',
+          profileImageUrl: 'https://ui-avatars.com/api/?name=Demo+User'
+        });
+      }
+      
       // Extract and host the project using new SOLID architecture
       const projectData = await newProjectService.processUpload(req.file, {
         title,
         description,
         category,
-        userId: 1, // Anonymous user for now
-        username: "Anonymous", // Default username
+        userId: userId,
+        username: username,
       });
       
       // Store project in the database
