@@ -5,9 +5,6 @@ import {
 } from "../application/UserProjectsService";
 import { PostgresUserProjectsRepository } from "../infrastructure/UserProjectsRepository";
 
-// The auth middleware already has declared the user type in Express namespace
-// We're just using it here, not redefining it
-
 /**
  * Controller for user projects API using CQRS pattern
  * Responsible for HTTP request handling and response formatting
@@ -30,18 +27,15 @@ export class UserProjectsController {
     try {
       const userId = parseInt(req.params.userId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
-      
-      // Check if user is authenticated
-      if (!currentUser) {
+      // Check if user is authenticated (already verified by middleware)
+      if (!req.user) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
       // Verify user has access to this data (their own data or admin access)
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId;
+      const isAdmin = req.user.role === 'admin';
+      const isOwnData = req.user.userId === userId;
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this user's projects" });
@@ -69,18 +63,15 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
-      
-      // Check if user is authenticated
-      if (!currentUser) {
+      // Check if user is authenticated (already verified by middleware)
+      if (!req.user) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = req.user.role === 'admin';
+      const isOwnData = req.user.userId === userId;
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project's analytics" });
@@ -105,18 +96,15 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
-      
-      // Check if user is authenticated
-      if (!currentUser) {
+      // Check if user is authenticated (already verified by middleware)
+      if (!req.user) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = req.user.role === 'admin';
+      const isOwnData = req.user.userId === userId;
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project's engagement metrics" });
@@ -141,18 +129,15 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
-      
-      // Check if user is authenticated
-      if (!currentUser) {
+      // Check if user is authenticated (already verified by middleware)
+      if (!req.user) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = req.user.role === 'admin';
+      const isOwnData = req.user.userId === userId;
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project" });
