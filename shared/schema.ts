@@ -1,18 +1,29 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, pgEnum, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Role enum for RBAC
 export const roleEnum = pgEnum('role', ['admin', 'developer', 'user']);
 
-// Users table with role-based access control
+// Session storage table for auth persistence
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table with Replit Auth support
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: varchar("email").notNull().unique(),
+  id: varchar("id").primaryKey().notNull(), // Changed to varchar for Replit Auth user ID
+  username: text("username").unique(),
+  email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   role: roleEnum("role").default('user').notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   lastLogin: timestamp("last_login"),
@@ -23,7 +34,7 @@ export const users = pgTable("users", {
 // Projects table
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
@@ -51,7 +62,7 @@ export const projectViews = pgTable("project_views", {
 export const projectLikes = pgTable("project_likes", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  userId: integer("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
   visitorId: text("visitor_id"), // For anonymous likes
   likedAt: timestamp("liked_at").defaultNow().notNull(),
 });
@@ -101,6 +112,15 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions)
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type UpsertUser = {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  username?: string | null;
+  role?: "admin" | "developer" | "user";
+};
 
 export type InsertPermission = z.infer<typeof insertPermissionSchema>;
 export type Permission = typeof permissions.$inferSelect;

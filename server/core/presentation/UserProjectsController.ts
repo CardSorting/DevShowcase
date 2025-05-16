@@ -4,9 +4,7 @@ import {
   UserProjectsQueryService
 } from "../application/UserProjectsService";
 import { PostgresUserProjectsRepository } from "../infrastructure/UserProjectsRepository";
-
-// The auth middleware already has declared the user type in Express namespace
-// We're just using it here, not redefining it
+import { storage } from "../../storage";
 
 /**
  * Controller for user projects API using CQRS pattern
@@ -30,18 +28,25 @@ export class UserProjectsController {
     try {
       const userId = parseInt(req.params.userId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
+      // Get the authenticated user from Replit Auth
+      const currentUser = req.user as any;
       
       // Check if user is authenticated
-      if (!currentUser) {
+      if (!currentUser || !currentUser.claims) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
+      // Get user from database
+      const userFromDb = await storage.getUser(currentUser.claims.sub);
+      if (!userFromDb) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+      
       // Verify user has access to this data (their own data or admin access)
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId;
+      const isAdmin = userFromDb.role === 'admin';
+      const isOwnData = currentUser.claims.sub === userId.toString();
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this user's projects" });
@@ -69,18 +74,25 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
+      // Get the authenticated user from Replit Auth
+      const currentUser = req.user as any;
       
       // Check if user is authenticated
-      if (!currentUser) {
+      if (!currentUser || !currentUser.claims) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
+      // Get user from database
+      const userFromDb = await storage.getUser(currentUser.claims.sub);
+      if (!userFromDb) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+      
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = userFromDb.role === 'admin';
+      const isOwnData = currentUser.claims.sub === userId.toString();
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project's analytics" });
@@ -105,18 +117,25 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
+      // Get the authenticated user from Replit Auth
+      const currentUser = req.user as any;
       
       // Check if user is authenticated
-      if (!currentUser) {
+      if (!currentUser || !currentUser.claims) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
+      // Get user from database
+      const userFromDb = await storage.getUser(currentUser.claims.sub);
+      if (!userFromDb) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+      
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = userFromDb.role === 'admin';
+      const isOwnData = currentUser.claims.sub === userId.toString();
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project's engagement metrics" });
@@ -141,18 +160,25 @@ export class UserProjectsController {
       const userId = parseInt(req.params.userId, 10);
       const projectId = parseInt(req.params.projectId, 10);
       
-      // Get the authenticated user
-      const currentUser = req.user;
+      // Get the authenticated user from Replit Auth
+      const currentUser = req.user as any;
       
       // Check if user is authenticated
-      if (!currentUser) {
+      if (!currentUser || !currentUser.claims) {
         res.status(401).json({ message: "Authentication required" });
         return;
       }
       
+      // Get user from database
+      const userFromDb = await storage.getUser(currentUser.claims.sub);
+      if (!userFromDb) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+      
       // Verify user has access to this project
-      const isAdmin = currentUser.role === 'admin';
-      const isOwnData = currentUser.userId === userId || currentUser.id === userId;
+      const isAdmin = userFromDb.role === 'admin';
+      const isOwnData = currentUser.claims.sub === userId.toString();
       
       if (!isOwnData && !isAdmin) {
         res.status(403).json({ message: "You don't have permission to access this project" });

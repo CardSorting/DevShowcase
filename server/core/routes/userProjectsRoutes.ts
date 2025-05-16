@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserProjectsController } from '../presentation/UserProjectsController';
-import { authenticate } from '../../domains/auth/authMiddleware';
+import { isAuthenticated } from '../../replitAuth';
 
 // Initialize router
 const router = Router();

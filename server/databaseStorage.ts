@@ -1,100 +1,106 @@
 import {
-  type Project,
-  type InsertProject,
-  type ProjectView,
-  type InsertProjectView,
-  type ProjectLike,
-  type InsertProjectLike,
-  type User,
-  type InsertUser,
-  type Permission,
-  type RolePermission,
   users,
   projects,
   projectViews,
   projectLikes,
   permissions,
-  rolePermissions
+  rolePermissions,
+  type User,
+  type Project,
+  type Permission,
+  type RolePermission,
+  type InsertUser,
+  type InsertProject,
+  type InsertPermission,
+  type InsertRolePermission,
+  type UpsertUser
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, like, desc, asc, sql, inArray, or } from "drizzle-orm";
+import { IStorage, ProjectFilters } from "./storage";
 import { Project as ProjectType } from "@shared/types";
-import { db, pool } from "./db";
-import { eq, and, desc, asc, like, or, inArray, sql, count } from "drizzle-orm";
-import { IStorage } from "./storage";
-import type { ProjectFilters } from "./storage";
 
-// Utility for retry logic
-const withRetry = async <T>(
-  fn: () => Promise<T>,
-  retries = 3,
-  delay = 500
-): Promise<T> => {
-  try {
-    return await fn();
-  } catch (err: any) {
-    if (
-      retries > 0 && 
-      (err.message?.includes('rate limit') || err.code === 'XX000')
-    ) {
-      console.log(`Database rate limit hit, retrying in ${delay}ms... (${retries} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return withRetry(fn, retries - 1, delay * 1.5);
-    }
-    throw err;
-  }
-};
-
+/**
+ * Database storage implementation that uses PostgreSQL
+ * This class implements the IStorage interface
+ */
 export class DatabaseStorage implements IStorage {
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user;
-    });
+  /**
+   * Get a user by ID
+   */
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
+  /**
+   * Get a user by username
+   */
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.username, username));
-      return user;
-    });
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
-  
+
+  /**
+   * Get a user by email
+   */
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
-    });
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
+  /**
+   * Create a new user
+   */
   async createUser(insertUser: InsertUser): Promise<User> {
-    return withRetry(async () => {
-      const [user] = await db.insert(users).values(insertUser).returning();
-      return user;
-    });
-  }
-  
-  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
-    return withRetry(async () => {
-      const [updatedUser] = await db
-        .update(users)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(users.id, id))
-        .returning();
-        
-      return updatedUser;
-    });
-  }
-  
-  async getUsersByRole(role: string): Promise<User[]> {
-    return withRetry(async () => {
-      return await db
-        .select()
-        .from(users)
-        .where(eq(users.role, role as any));
-    });
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
   }
 
-  // Project methods
+  /**
+   * Upsert a user (create if not exists, update if exists)
+   * Used for Replit Auth integration
+   */
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  /**
+   * Update a user
+   */
+  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  /**
+   * Get users by role
+   */
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  /**
+   * Get projects with filtering, sorting, and pagination
+   */
   async getProjects(filters: ProjectFilters): Promise<{
     projects: ProjectType[];
     totalCount: number;
@@ -102,424 +108,443 @@ export class DatabaseStorage implements IStorage {
     currentPage: number;
     categoryCounts: { [key: string]: number };
   }> {
-    return withRetry(async () => {
-      const { sort, categories, popularity, search, page, visitorId } = filters;
-      const pageSize = 8;
-      const offset = (page - 1) * pageSize;
-      
-      // Build query conditions
-      let queryConditions: any[] = [];
-      
-      // Filter by categories if provided
-      if (categories.length > 0) {
-        queryConditions.push(inArray(projects.category, categories));
-      }
-      
-      // Filter by popularity
-      if (popularity === "trending") {
-        queryConditions.push(eq(projects.trending, true));
-      } else if (popularity === "popular") {
-        queryConditions.push(sql`${projects.views} >= 1000`);
-      } else if (popularity === "featured") {
-        queryConditions.push(eq(projects.featured, true));
-      }
-      
-      // Filter by search query
-      if (search) {
-        queryConditions.push(
-          or(
-            like(projects.title, `%${search}%`),
-            like(projects.description, `%${search}%`)
-          )
-        );
-      }
-
-      // Create the where condition if needed
-      const whereCondition = queryConditions.length > 0 ? and(...queryConditions) : undefined;
-
-      // Fetch total count first (separate query to avoid rate limits)
-      const totalCountResult = await db
-        .select({ count: count() })
-        .from(projects)
-        .where(whereCondition);
-        
-      const totalCount = Number(totalCountResult[0]?.count ?? 0);
-      const totalPages = Math.ceil(totalCount / pageSize);
-      
-      // Execute the query with sorting and pagination
-      let projectsResult;
-      
-      // We need to handle the query building differently due to TypeScript limitations
-      if (sort === "recent") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
-          .orderBy(desc(projects.createdAt))
-          .limit(pageSize)
-          .offset(offset);
-      } else if (sort === "views") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
-          .orderBy(desc(projects.views))
-          .limit(pageSize)
-          .offset(offset);
-      } else if (sort === "trending") {
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
-          .orderBy(desc(projects.trending))
-          .orderBy(desc(projects.views))
-          .orderBy(desc(projects.likes))
-          .limit(pageSize)
-          .offset(offset);
-      } else {
-        // Popular is the default sort - by likes
-        projectsResult = await db.select()
-          .from(projects)
-          .where(whereCondition)
-          .orderBy(desc(projects.likes))
-          .limit(pageSize)
-          .offset(offset);
-      }
-      
-      // Small delay to avoid hitting rate limits between queries
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Get category counts (in a separate query)
-      const categoryCounts = await db
-        .select({
-          category: projects.category,
-          count: count(),
-        })
-        .from(projects)
-        .groupBy(projects.category);
-      
-      // Convert to category count object
-      const categoryCountsObject: { [key: string]: number } = {};
-      categoryCounts.forEach((item) => {
-        categoryCountsObject[item.category] = Number(item.count);
-      });
-      
-      // Find project likes all at once instead of individually
-      const projectIds = projectsResult.map((p: any) => p.id);
-      const likesForProjects = projectIds.length > 0 
-        ? await db
-            .select()
-            .from(projectLikes)
-            .where(
-              and(
-                inArray(projectLikes.projectId, projectIds),
-                eq(projectLikes.visitorId, visitorId)
-              )
-            )
-        : [];
-      
-      // Create a map of projectId -> isLiked
-      const projectLikeMap = new Map<number, boolean>();
-      likesForProjects.forEach(like => {
-        projectLikeMap.set(like.projectId, true);
-      });
-      
-      // Get all user ids needed
-      const userIds = projectsResult
-        .map((p: any) => p.userId)
-        .filter((id: any): id is number => id !== null);
-        
-      // Fetch all users in one query if there are any user IDs
-      const userMap = new Map<number, User>();
-      if (userIds.length > 0) {
-        const usersResult = await db
-          .select()
-          .from(users)
-          .where(inArray(users.id, userIds));
-          
-        usersResult.forEach(user => {
-          userMap.set(user.id, user);
-        });
-      }
-      
-      // Transform projects with user data and like status
-      const enrichedProjects = projectsResult.map((project: any) => {
-        const user = project.userId !== null ? userMap.get(project.userId) : undefined;
-        const isLiked = projectLikeMap.get(project.id) || false;
-        
-        // Convert DB date to string format to match Project interface
-        const formattedProject = {
-          ...project,
-          userId: project.userId ?? undefined, // Convert null to undefined to match ProjectType
-          username: user?.username || "Anonymous",
-          isLiked,
-          createdAt: project.createdAt.toISOString(),
-          updatedAt: project.updatedAt.toISOString()
-        };
-        
-        return formattedProject as unknown as ProjectType;
-      });
-      
-      return {
-        projects: enrichedProjects,
-        totalCount,
-        totalPages,
-        currentPage: page,
-        categoryCounts: categoryCountsObject,
-      };
+    // Default values and query setup
+    const limit = 12;
+    const offset = (filters.page - 1) * limit;
+    
+    // Build query conditions
+    let conditions = sql`1=1`; // Default true condition
+    
+    // Apply category filter
+    if (filters.categories && filters.categories.length > 0) {
+      conditions = and(conditions, inArray(projects.category, filters.categories));
+    }
+    
+    // Apply search filter
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+      conditions = and(
+        conditions,
+        or(
+          like(projects.title, searchTerm),
+          like(projects.description, searchTerm)
+        )
+      );
+    }
+    
+    // Apply popularity filter
+    if (filters.popularity === 'trending') {
+      conditions = and(conditions, eq(projects.trending, true));
+    } else if (filters.popularity === 'featured') {
+      conditions = and(conditions, eq(projects.featured, true));
+    }
+    
+    // Determine sort order
+    let orderBy;
+    if (filters.sort === 'newest') {
+      orderBy = desc(projects.createdAt);
+    } else if (filters.sort === 'oldest') {
+      orderBy = asc(projects.createdAt);
+    } else if (filters.sort === 'most-viewed') {
+      orderBy = desc(projects.views);
+    } else if (filters.sort === 'most-liked') {
+      orderBy = desc(projects.likes);
+    } else {
+      // Default to newest
+      orderBy = desc(projects.createdAt);
+    }
+    
+    // Get category counts for faceted search
+    const categoryCounts = await db
+      .select({
+        category: projects.category,
+        count: sql<number>`count(*)`,
+      })
+      .from(projects)
+      .groupBy(projects.category);
+    
+    // Convert to object format
+    const categoryCountsObj: { [key: string]: number } = {};
+    categoryCounts.forEach(item => {
+      categoryCountsObj[item.category] = Number(item.count);
     });
+    
+    // Get total count for pagination
+    const [{ count }] = await db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(projects)
+      .where(conditions);
+    
+    // Get projects with pagination
+    const projectsData = await db
+      .select()
+      .from(projects)
+      .where(conditions)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(orderBy);
+    
+    // Add isLiked property to each project
+    const projectsWithLikeStatus = await Promise.all(
+      projectsData.map(async (project) => {
+        const isLiked = filters.visitorId 
+          ? await this.isProjectLikedByVisitor(project.id, filters.visitorId)
+          : false;
+        
+        return {
+          ...project,
+          isLiked
+        };
+      })
+    );
+
+    const totalCount = Number(count);
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    return {
+      projects: projectsWithLikeStatus,
+      totalCount,
+      totalPages,
+      currentPage: filters.page,
+      categoryCounts: categoryCountsObj
+    };
   }
 
+  /**
+   * Get a project by ID with like status
+   */
   async getProjectById(id: number, visitorId?: string): Promise<ProjectType | undefined> {
-    return withRetry(async () => {
-      const [project] = await db.select().from(projects).where(eq(projects.id, id));
-      if (!project) return undefined;
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    
+    if (!project) return undefined;
+    
+    // Check if liked by visitor
+    const isLiked = visitorId 
+      ? await this.isProjectLikedByVisitor(id, visitorId)
+      : false;
+    
+    return {
+      ...project,
+      isLiked
+    };
+  }
 
-      let user;
-      let isLiked = false;
+  /**
+   * Create a new project
+   */
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+
+  /**
+   * Update a project
+   */
+  async updateProject(id: number, data: Partial<Project>): Promise<Project | undefined> {
+    const [project] = await db
+      .update(projects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+
+  /**
+   * Delete a project
+   */
+  async deleteProject(id: number): Promise<boolean> {
+    await db.delete(projects).where(eq(projects.id, id));
+    return true;
+  }
+
+  /**
+   * Record a project view from a unique visitor
+   */
+  async recordProjectView(projectId: number, visitorId: string): Promise<void> {
+    // Check if view already exists from this visitor
+    const [existingView] = await db
+      .select()
+      .from(projectViews)
+      .where(
+        and(
+          eq(projectViews.projectId, projectId),
+          eq(projectViews.visitorId, visitorId)
+        )
+      );
+    
+    // Only record view if it's new
+    if (!existingView) {
+      // Insert new view record
+      await db.insert(projectViews).values({
+        projectId,
+        visitorId,
+      });
       
-      // Load user and liked status in parallel to reduce database load
-      if (project.userId !== null || visitorId) {
-        const [userResult, likedResult] = await Promise.all([
-          project.userId !== null ? this.getUser(project.userId) : Promise.resolve(undefined),
-          visitorId ? this.isProjectLikedByVisitor(id, visitorId) : Promise.resolve(false)
-        ]);
-        
-        user = userResult;
-        isLiked = likedResult;
-      }
+      // Increment view count on project
+      await db
+        .update(projects)
+        .set({ 
+          views: sql`${projects.views} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(projects.id, projectId));
+    }
+  }
 
-      // Convert database dates to string format to match ProjectType interface
-      const formattedProject = {
+  /**
+   * Toggle like status for a project and visitor
+   */
+  async toggleProjectLike(projectId: number, visitorId: string): Promise<{ liked: boolean }> {
+    // Check if already liked
+    const isLiked = await this.isProjectLikedByVisitor(projectId, visitorId);
+    
+    if (isLiked) {
+      // Remove like
+      await db
+        .delete(projectLikes)
+        .where(
+          and(
+            eq(projectLikes.projectId, projectId),
+            eq(projectLikes.visitorId, visitorId)
+          )
+        );
+      
+      // Decrement like count
+      await db
+        .update(projects)
+        .set({ 
+          likes: sql`${projects.likes} - 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(projects.id, projectId));
+      
+      return { liked: false };
+    } else {
+      // Add like
+      await db.insert(projectLikes).values({
+        projectId,
+        visitorId,
+      });
+      
+      // Increment like count
+      await db
+        .update(projects)
+        .set({ 
+          likes: sql`${projects.likes} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(projects.id, projectId));
+      
+      return { liked: true };
+    }
+  }
+
+  /**
+   * Check if a project is liked by a specific visitor
+   */
+  private async isProjectLikedByVisitor(projectId: number, visitorId: string): Promise<boolean> {
+    const [like] = await db
+      .select()
+      .from(projectLikes)
+      .where(
+        and(
+          eq(projectLikes.projectId, projectId),
+          eq(projectLikes.visitorId, visitorId)
+        )
+      );
+    
+    return !!like;
+  }
+
+  /**
+   * Get permissions for a user
+   */
+  async getUserPermissions(userId: string): Promise<{resource: string, action: string}[]> {
+    // Get user role
+    const user = await this.getUser(userId);
+    if (!user) return [];
+    
+    // Get role permissions
+    const rolePerms = await db
+      .select({
+        permission: permissions
+      })
+      .from(rolePermissions)
+      .innerJoin(
+        permissions,
+        eq(rolePermissions.permissionId, permissions.id)
+      )
+      .where(eq(rolePermissions.role, user.role));
+    
+    // Return formatted permissions
+    return rolePerms.map(rp => ({
+      resource: rp.permission.resource,
+      action: rp.permission.action
+    }));
+  }
+
+  /**
+   * Add a permission
+   */
+  async addPermission(name: string, description: string, resource: string, action: string): Promise<{ id: number }> {
+    const [perm] = await db
+      .insert(permissions)
+      .values({
+        name,
+        description, 
+        resource,
+        action
+      })
+      .returning({ id: permissions.id });
+    
+    return { id: perm.id };
+  }
+
+  /**
+   * Add a role permission
+   */
+  async addRolePermission(role: string, permissionId: number): Promise<{ id: number }> {
+    const [rp] = await db
+      .insert(rolePermissions)
+      .values({
+        role,
+        permissionId
+      })
+      .returning({ id: rolePermissions.id });
+    
+    return { id: rp.id };
+  }
+
+  /**
+   * Remove a role permission
+   */
+  async removeRolePermission(role: string, permissionId: number): Promise<boolean> {
+    await db
+      .delete(rolePermissions)
+      .where(
+        and(
+          eq(rolePermissions.role, role),
+          eq(rolePermissions.permissionId, permissionId)
+        )
+      );
+    
+    return true;
+  }
+
+  /**
+   * Get projects by user ID
+   */
+  async getProjectsByUser(userId: string): Promise<ProjectType[]> {
+    try {
+      // Get all projects for the user
+      const userProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, userId))
+        .orderBy(desc(projects.createdAt));
+      
+      // Format projects to include like status and proper typing
+      const formattedProjects = userProjects.map(project => ({
         ...project,
-        userId: project.userId ?? undefined, // Convert null to undefined to match ProjectType
-        username: user?.username || "Anonymous",
-        isLiked,
+        isLiked: false, // Default value since we don't have visitor ID here
+        username: 'Owner', // Placeholder
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString()
-      };
-
-      return formattedProject as unknown as ProjectType;
-    });
-  }
-
-  async createProject(insertProject: InsertProject): Promise<Project> {
-    return withRetry(async () => {
-      const [project] = await db.insert(projects).values(insertProject).returning();
-      return project;
-    });
-  }
-
-  async updateProject(id: number, data: Partial<Project>): Promise<Project | undefined> {
-    return withRetry(async () => {
-      const [updatedProject] = await db
-        .update(projects)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(projects.id, id))
-        .returning();
+      })) as unknown as ProjectType[];
       
-      return updatedProject;
-    });
+      return formattedProjects;
+    } catch (error) {
+      console.error("Error getting user projects:", error);
+      return [];
+    }
   }
 
-  async deleteProject(id: number): Promise<boolean> {
-    return withRetry(async () => {
-      const result = await db.delete(projects).where(eq(projects.id, id));
-      return result.rowCount !== null && result.rowCount > 0;
-    });
-  }
-
-  // View tracking
-  async recordProjectView(projectId: number, visitorId: string): Promise<void> {
-    return withRetry(async () => {
-      // Check if project exists
-      const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
-      if (!project) {
-        throw new Error("Project not found");
-      }
-
-      // Check if visitor has already viewed this project
-      const [existingView] = await db
-        .select()
+  /**
+   * Get analytics for a project
+   */
+  async getProjectAnalytics(projectId: number): Promise<any> {
+    try {
+      // Get project views
+      const viewsData = await db
+        .select({
+          date: sql`DATE(${projectViews.viewedAt})`,
+          count: sql`COUNT(${projectViews.id})`
+        })
         .from(projectViews)
-        .where(
-          and(
-            eq(projectViews.projectId, projectId),
-            eq(projectViews.visitorId, visitorId)
-          )
-        );
-
-      if (!existingView) {
-        // Add view record
-        await db.insert(projectViews).values({
-          projectId,
-          visitorId,
-        });
-
-        // Wait briefly to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 30));
-
-        // Increment view count
-        await db
-          .update(projects)
-          .set({ 
-            views: project.views + 1,
-            trending: (project.views + 1 > 100 && project.likes > 10) ? true : project.trending
-          })
-          .where(eq(projects.id, projectId));
-      }
-    });
-  }
-
-  // Like tracking
-  async toggleProjectLike(projectId: number, visitorId: string): Promise<{ liked: boolean }> {
-    return withRetry(async () => {
-      // Check if project exists
-      const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
-      if (!project) {
-        throw new Error("Project not found");
-      }
-
-      // Check if visitor has already liked this project
-      const [existingLike] = await db
-        .select()
-        .from(projectLikes)
-        .where(
-          and(
-            eq(projectLikes.projectId, projectId),
-            eq(projectLikes.visitorId, visitorId)
-          )
-        );
-
-      if (existingLike) {
-        // Unlike: remove the like
-        await db
-          .delete(projectLikes)
-          .where(eq(projectLikes.id, existingLike.id));
-
-        // Wait briefly to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 30));
-
-        // Decrement like count
-        await db
-          .update(projects)
-          .set({ likes: project.likes - 1 })
-          .where(eq(projects.id, projectId));
-
-        return { liked: false };
-      } else {
-        // Like: add a new like
-        await db.insert(projectLikes).values({
-          projectId,
-          visitorId,
-        });
-
-        // Wait briefly to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 30));
-
-        // Increment like count
-        await db
-          .update(projects)
-          .set({ likes: project.likes + 1 })
-          .where(eq(projects.id, projectId));
-
-        return { liked: true };
-      }
-    });
-  }
-
-  // Helper to check if a visitor has liked a project
-  private async isProjectLikedByVisitor(projectId: number, visitorId: string): Promise<boolean> {
-    return withRetry(async () => {
-      const [existingLike] = await db
-        .select()
-        .from(projectLikes)
-        .where(
-          and(
-            eq(projectLikes.projectId, projectId),
-            eq(projectLikes.visitorId, visitorId)
-          )
-        );
+        .where(eq(projectViews.projectId, projectId))
+        .groupBy(sql`DATE(${projectViews.viewedAt})`)
+        .orderBy(sql`DATE(${projectViews.viewedAt})`);
       
-      return !!existingLike;
-    });
-  }
-  
-  // Permission methods
-  async getUserPermissions(userId: number): Promise<{resource: string, action: string}[]> {
-    return withRetry(async () => {
-      // Get user role
-      const user = await this.getUser(userId);
-      if (!user) {
-        return [];
-      }
-      
-      // Get permissions for the user's role
-      const rolePermsResult = await db
+      // Get project likes
+      const likesData = await db
         .select({
-          permissionId: rolePermissions.permissionId,
+          date: sql`DATE(${projectLikes.likedAt})`,
+          count: sql`COUNT(${projectLikes.id})`
         })
-        .from(rolePermissions)
-        .where(eq(rolePermissions.role, user.role as any));
+        .from(projectLikes)
+        .where(eq(projectLikes.projectId, projectId))
+        .groupBy(sql`DATE(${projectLikes.likedAt})`)
+        .orderBy(sql`DATE(${projectLikes.likedAt})`);
       
-      if (rolePermsResult.length === 0) {
-        return [];
-      }
+      // Get unique visitor count
+      const uniqueVisitors = await db
+        .select({ count: sql`COUNT(DISTINCT ${projectViews.visitorId})` })
+        .from(projectViews)
+        .where(eq(projectViews.projectId, projectId));
       
-      // Get the permission details
-      const permissionIds = rolePermsResult.map(rp => rp.permissionId);
-      const permissionsResult = await db
-        .select({
-          resource: permissions.resource,
-          action: permissions.action
-        })
-        .from(permissions)
-        .where(inArray(permissions.id, permissionIds));
+      // Get total views
+      const totalViews = await db
+        .select({ count: sql`COUNT(${projectViews.id})` })
+        .from(projectViews)
+        .where(eq(projectViews.projectId, projectId));
       
-      return permissionsResult;
-    });
-  }
-  
-  async addPermission(name: string, description: string, resource: string, action: string): Promise<{ id: number }> {
-    return withRetry(async () => {
-      const [result] = await db
-        .insert(permissions)
-        .values({
-          name,
-          description,
-          resource,
-          action
-        })
-        .returning({ id: permissions.id });
+      // Get total likes
+      const totalLikes = await db
+        .select({ count: sql`COUNT(${projectLikes.id})` })
+        .from(projectLikes)
+        .where(eq(projectLikes.projectId, projectId));
       
-      return result;
-    });
-  }
-  
-  async addRolePermission(role: string, permissionId: number): Promise<{ id: number }> {
-    return withRetry(async () => {
-      // Cast the role to any to avoid TypeScript issues with enum types
-      const [result] = await db
-        .insert(rolePermissions)
-        .values({
-          role: role as any,
-          permissionId
-        })
-        .returning({ id: rolePermissions.id });
+      // Calculate metrics
+      const visitorCount = uniqueVisitors[0]?.count || 0;
+      const viewsCount = totalViews[0]?.count || 0;
+      const likesCount = totalLikes[0]?.count || 0;
       
-      return result;
-    });
-  }
-  
-  async removeRolePermission(role: string, permissionId: number): Promise<boolean> {
-    return withRetry(async () => {
-      const result = await db
-        .delete(rolePermissions)
-        .where(
-          and(
-            eq(rolePermissions.role, role as any),
-            eq(rolePermissions.permissionId, permissionId)
-          )
-        );
+      // Calculate engagement rate (likes per view)
+      const engagementRate = viewsCount > 0 ? (likesCount / viewsCount) * 100 : 0;
       
-      return result.rowCount !== null && result.rowCount > 0;
-    });
+      return {
+        viewsByDay: viewsData.map(item => ({
+          date: item.date,
+          views: Number(item.count)
+        })),
+        likesByDay: likesData.map(item => ({
+          date: item.date,
+          likes: Number(item.count)
+        })),
+        metrics: {
+          uniqueVisitors: Number(visitorCount),
+          totalViews: Number(viewsCount),
+          totalLikes: Number(likesCount),
+          engagementRate: parseFloat(engagementRate.toFixed(2))
+        }
+      };
+    } catch (error) {
+      console.error("Error getting project analytics:", error);
+      return {
+        viewsByDay: [],
+        likesByDay: [],
+        metrics: {
+          uniqueVisitors: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          engagementRate: 0
+        }
+      };
+    }
   }
 }
