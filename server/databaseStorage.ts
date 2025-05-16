@@ -7,6 +7,7 @@ import {
   type InsertProjectLike,
   type User,
   type InsertUser,
+  type UpsertUser,
   users,
   projects,
   projectViews,
@@ -41,7 +42,7 @@ const withRetry = async <T>(
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
@@ -58,6 +59,23 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     return withRetry(async () => {
       const [user] = await db.insert(users).values(insertUser).returning();
+      return user;
+    });
+  }
+  
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    return withRetry(async () => {
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
       return user;
     });
   }

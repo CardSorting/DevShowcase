@@ -6,7 +6,8 @@ import {
   type ProjectLike,
   type InsertProjectLike,
   type User,
-  type InsertUser
+  type InsertUser,
+  type UpsertUser
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { DatabaseStorage } from "./databaseStorage";
@@ -24,9 +25,10 @@ export interface ProjectFilters {
 // Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Project methods
   getProjects(filters: ProjectFilters): Promise<{
