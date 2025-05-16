@@ -186,16 +186,32 @@ authRouter.get('/status', (req, res) => {
   }
 });
 
-// Logout route
+// Logout route with better error handling
 authRouter.post('/logout', (req, res) => {
+  console.log('Logout request received');
+  
   if (req.session) {
+    console.log('Destroying session...');
+    
+    // Clear user data and authentication flag
+    req.session.user = undefined;
+    req.session.isAuthenticated = false;
+    
+    // Destroy the session
     req.session.destroy(err => {
       if (err) {
-        return res.status(500).json({ message: 'Logout failed' });
+        console.error('Error destroying session:', err);
+        return res.status(500).json({ message: 'Logout failed', error: err.message });
       }
+      
+      console.log('Session successfully destroyed');
+      
+      // Clear the cookie as well
+      res.clearCookie('connect.sid');
       res.json({ success: true });
     });
   } else {
+    console.log('No session to destroy');
     res.json({ success: true });
   }
 });

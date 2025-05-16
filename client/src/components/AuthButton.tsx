@@ -46,16 +46,39 @@ export default function AuthButton() {
     console.error('Error fetching auth status:', error);
   }
 
-  // Handle logout
+  // Handle logout with improved error handling
   const handleLogout = async () => {
     try {
-      await apiRequest("/auth/logout", "POST");
+      console.log("Attempting to log out...");
+      
+      // Direct fetch call instead of using apiRequest
+      const response = await fetch('/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log("Logout response:", response);
+      
+      if (!response.ok) {
+        throw new Error(`Logout failed: ${response.status} ${response.statusText}`);
+      }
+      
+      // Force a refetch of auth status
       await refetch();
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      
+      // Force page reload to ensure all state is reset
+      window.location.href = '/';
     } catch (error) {
+      console.error("Logout error:", error);
+      
       toast({
         title: "Error",
         description: "Failed to log out. Please try again.",
@@ -83,7 +106,12 @@ export default function AuthButton() {
   if (!authStatus?.isAuthenticated) {
     console.log("Auth Status: Not authenticated", authStatus);
     return (
-      <Button onClick={handleGitHubLogin} variant="outline" size="sm">
+      <Button 
+        onClick={handleGitHubLogin} 
+        variant="default" 
+        size="sm"
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
         <Github className="h-4 w-4 mr-2" />
         Login with GitHub
       </Button>
