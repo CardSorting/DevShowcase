@@ -44,33 +44,57 @@ authRouter.get('/callback/github', async (req, res) => {
     const accessToken = tokenData.access_token;
     
     if (!accessToken) {
+      console.error('Failed to get access token:', tokenData);
       return res.redirect('/?error=token_exchange_failed');
     }
     
+    console.log('Successfully obtained GitHub access token');
+    
     // Get user profile from GitHub
+    console.log('Fetching GitHub user profile...');
     const profileResponse = await fetch('https://api.github.com/user', {
       headers: {
-        'Authorization': `token ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
         'User-Agent': 'DevShowcase-App'
       }
     });
     
+    if (!profileResponse.ok) {
+      console.error('Failed to fetch GitHub profile:', await profileResponse.text());
+      return res.redirect('/?error=github_profile_failed');
+    }
+    
+    console.log('Fetching GitHub user emails...');
     const emailsResponse = await fetch('https://api.github.com/user/emails', {
       headers: {
-        'Authorization': `token ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
         'User-Agent': 'DevShowcase-App'
       }
     });
+    
+    if (!emailsResponse.ok) {
+      console.error('Failed to fetch GitHub emails:', await emailsResponse.text());
+    }
     
     const profile = await profileResponse.json();
     const emails = await emailsResponse.json();
     
+    console.log('Processing GitHub profile:', {
+      id: profile.id,
+      login: profile.login,
+      name: profile.name
+    });
+    
     // Check if user already exists with GitHub ID
-    let user = await storage.getUserByGithubId(profile.id);
+    let user = await storage.getUserByGithubId(profile.id.toString());
+    console.log('Existing user by GitHub ID:', user);
     
     if (!user) {
       // User doesn't exist, create a new user
       const username = profile.login || `github_${profile.id}`;
+      console.log('Checking if username is taken:', username);
       
       // Check if username is already taken
       const existingUser = await storage.getUserByUsername(username);
@@ -80,20 +104,52 @@ authRouter.get('/callback/github', async (req, res) => {
         ? `${username}_${Math.floor(Math.random() * 10000)}`
         : username;
       
-      // Create new user
-      user = await storage.createUser({
+      const email = Array.isArray(emails) && emails.length > 0 ? emails[0].email : null;
+      console.log('Creating new user with data:', {
         username: finalUsername,
         githubId: profile.id.toString(),
         displayName: profile.name || finalUsername,
         avatarUrl: profile.avatar_url,
-        email: emails[0]?.email,
+        email
       });
+      
+      // Create new user
+      try {
+        user = await storage.createUser({
+          username: finalUsername,
+          githubId: profile.id.toString(),
+          displayName: profile.name || finalUsername,
+          avatarUrl: profile.avatar_url,
+          email,
+        });
+        console.log('Successfully created user:', user);
+      } catch (error) {
+        console.error('Failed to create user:', error);
+        return res.redirect('/?error=user_creation_failed');
+      }
+    } else {
+      console.log('Found existing user:', user);
     }
     
     // Store user in session
     if (req.session) {
+      console.log('Saving user to session...');
       req.session.user = user;
       req.session.isAuthenticated = true;
+      // Force session save
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Failed to save session:', err);
+            reject(err);
+          } else {
+            console.log('Successfully saved session');
+            resolve();
+          }
+        });
+      });
+    } else {
+      console.error('No session object available!');
     }
     
     res.redirect('/');
