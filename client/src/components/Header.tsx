@@ -34,46 +34,9 @@ export default function Header() {
     navigate(`/?search=${encodeURIComponent(searchQuery)}`);
   };
   
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!username.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a username",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsLoggingIn(true);
-    
-    try {
-      await apiRequest("/api/login", {
-        method: "POST",
-        body: JSON.stringify({ username }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      
-      // Refetch the user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
-      setLoginDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "You are now logged in!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Login failed. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoggingIn(false);
-    }
+  const handleLogin = () => {
+    // Redirect to the Replit auth endpoint
+    window.location.href = "/api/login";
   };
   
   const handleLogout = async () => {
@@ -171,42 +134,7 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Login Dialog */}
-      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Login to DevShowcase</DialogTitle>
-            <DialogDescription>
-              Enter a username to log in or create an account.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleLogin} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
-                Username
-              </label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                disabled={isLoggingIn}
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={isLoggingIn || !username.trim()}
-                className="w-full"
-              >
-                {isLoggingIn ? "Logging in..." : "Login"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* For Replit Auth we don't need a dialog since we'll redirect to Replit's login page */}
     </header>
   );
 }

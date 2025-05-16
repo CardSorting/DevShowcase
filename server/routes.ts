@@ -69,21 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // API Routes
   
-  // Get current authenticated user
-  app.get('/api/auth/user', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      // With simplified auth, the user is stored in the session
-      const user = req.session.user;
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // The user endpoint is handled in replitAuth.ts
   
   // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {
