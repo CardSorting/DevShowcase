@@ -6,15 +6,12 @@ import {
   type ProjectLike,
   type InsertProjectLike,
   type User,
-  type UpsertUser
+  type InsertUser
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { DatabaseStorage } from "./databaseStorage";
 
-/**
- * Project filters for getProjects method
- * Used in the query part of CQRS pattern
- */
+// Project filters for getProjects method
 export interface ProjectFilters {
   sort: string;
   categories: string[];
@@ -24,15 +21,12 @@ export interface ProjectFilters {
   visitorId: string;
 }
 
-/**
- * Storage interface following Interface Segregation Principle
- * Defines the contract for data persistence
- */
+// Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: InsertUser): Promise<User>;
   
   // Project methods
   getProjects(filters: ProjectFilters): Promise<{
@@ -42,7 +36,6 @@ export interface IStorage {
     currentPage: number;
     categoryCounts: { [key: string]: number };
   }>;
-  getUserProjects(userId: string): Promise<ProjectType[]>;
   getProjectById(id: number, visitorId?: string): Promise<ProjectType | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, data: Partial<Project>): Promise<Project | undefined>;

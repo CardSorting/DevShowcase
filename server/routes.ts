@@ -8,7 +8,6 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
-// We'll implement a simplified auth system first
 
 // File upload configuration
 const upload = multer({
@@ -56,10 +55,6 @@ const createProjectSchema = z.object({
   }),
 });
 
-import { NextFunction } from 'express';
-import { projectController } from './domain/project/ProjectController';
-import { isAuthenticated, login, logout, getCurrentUser } from './basicAuth';
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup paths for project files
   const projectsDir = path.join(process.cwd(), "projects");
@@ -68,18 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve project files
   app.use("/projects", express.static(projectsDir));
   
-  // No auth setup needed for our basic token-based auth
-  
   // API Routes
-  
-  // Authentication routes
-  app.post("/api/auth/login", login);
-  app.post("/api/auth/logout", logout);
-  app.get("/api/auth/user", isAuthenticated, getCurrentUser);
-  
-  // Protected Project Upload Route - Only logged-in users can upload projects
-  app.post("/api/projects", isAuthenticated, upload.single("file"), 
-    (req, res) => projectController.uploadProject(req, res));
   
   // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {
@@ -112,18 +96,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Error fetching projects" });
-    }
-  });
-  
-  // Get current user's projects
-  app.get("/api/user/projects", isAuthenticated, async (req: any, res: Response) => {
-    try {
-      const userId = req.user.claims.sub;
-      const projects = await storage.getUserProjects(userId);
-      res.json(projects);
-    } catch (error) {
-      console.error("Error fetching user projects:", error);
-      res.status(500).json({ message: "Failed to fetch your projects" });
     }
   });
   

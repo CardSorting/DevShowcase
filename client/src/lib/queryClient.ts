@@ -1,5 +1,4 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { addAuthHeader } from "./authClient";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -14,18 +13,10 @@ export async function apiRequest(
   data?: unknown | undefined,
   formData?: FormData,
 ): Promise<Response> {
-  // Add authentication headers
-  const headers = data 
-    ? addAuthHeader({ "Content-Type": "application/json" }) 
-    : addAuthHeader({});
-  
   // If FormData is provided, use it directly without setting Content-Type (browser will set it with boundary)
   if (formData) {
-    const formHeaders = addAuthHeader({});
-    
     const res = await fetch(url, {
       method,
-      headers: formHeaders,
       body: formData,
       credentials: "include",
     });
@@ -36,7 +27,7 @@ export async function apiRequest(
   // Otherwise handle normal JSON data
   const res = await fetch(url, {
     method,
-    headers,
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
