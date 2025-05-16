@@ -1,18 +1,34 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
 // Users table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Projects table
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
+  username: text("username").notNull(), // We'll store the username for display purposes
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
@@ -40,16 +56,13 @@ export const projectViews = pgTable("project_views", {
 export const projectLikes = pgTable("project_likes", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  userId: integer("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
   visitorId: text("visitor_id"), // For anonymous likes
   likedAt: timestamp("liked_at").defaultNow().notNull(),
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+export const insertUserSchema = createInsertSchema(users);
 
 export const insertProjectSchema = createInsertSchema(projects)
   .omit({ id: true, views: true, likes: true, featured: true, trending: true, createdAt: true, updatedAt: true });
@@ -59,6 +72,15 @@ export const insertProjectViewSchema = createInsertSchema(projectViews)
 
 export const insertProjectLikeSchema = createInsertSchema(projectLikes)
   .omit({ id: true, likedAt: true });
+
+// Replit auth user type
+export type UpsertUser = {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+};
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
