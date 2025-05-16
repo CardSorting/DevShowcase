@@ -56,25 +56,9 @@ const createProjectSchema = z.object({
   }),
 });
 
-// Simple middleware for authentication
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // In a real application, this would check for a valid session/token
-  // For now, we'll use a simple mock authentication system
-  
-  // For demo purposes, provide a way to "authenticate" via query param
-  const hasAuth = req.query.auth === 'true' || req.headers.authorization;
-  
-  if (!hasAuth) {
-    return res.status(401).json({
-      message: 'You must be logged in to upload projects',
-      requiresAuth: true
-    });
-  }
-  
-  // Mock user ID for authenticated requests
-  (req as any).userId = '12345';
-  next();
-};
+import { NextFunction } from 'express';
+import { projectController } from './domain/project/ProjectController';
+import { setupAuth, isAuthenticated, login, logout, getCurrentUser } from './simpleAuth';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup paths for project files
@@ -84,17 +68,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve project files
   app.use("/projects", express.static(projectsDir));
   
+  // Set up simple authentication
+  setupAuth(app);
+  
   // API Routes
   
-  // Authentication routes (simplified)
-  app.post("/api/auth/login", (req, res) => {
-    // Simple mock login for demo purposes
-    const { username } = req.body;
-    res.json({
-      token: "mock_auth_token",
-      user: { id: "12345", username: username || "demo_user" }
-    });
-  });
+  // Authentication routes
+  app.post("/api/auth/login", login);
+  app.post("/api/auth/logout", logout);
+  app.get("/api/auth/user", isAuthenticated, getCurrentUser);
+  
+  // Protected Project Upload Route - Only logged-in users can upload projects
+  app.post("/api/projects", isAuthenticated, upload.single("file"), 
+    (req, res) => projectController.uploadProject(req, res));
   
   // Get all projects with filtering/sorting
   app.get("/api/projects", async (req: Request, res: Response) => {

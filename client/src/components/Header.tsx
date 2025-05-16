@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Heart, Bell, Code } from "lucide-react";
+import { Search, Heart, Bell, Code, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LoginButton } from "./LoginForm";
+import { useSimpleAuth } from "../hooks/useSimpleAuth";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
+  const { isAuthenticated, user } = useSimpleAuth();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +44,23 @@ export default function Header() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {isAuthenticated && (
+              <Link href="/upload">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  <span>Upload</span>
+                </Button>
+              </Link>
+            )}
             <button className="text-gray-500 hover:text-primary">
               <Heart className="h-5 w-5" />
             </button>
             <button className="text-gray-500 hover:text-primary">
               <Bell className="h-5 w-5" />
             </button>
-            <div className="relative">
-              <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </button>
-            </div>
+            
+            {/* Authentication button that handles login/logout */}
+            <LoginButton />
           </div>
         </div>
       </div>
