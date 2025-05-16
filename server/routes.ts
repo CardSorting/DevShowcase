@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
+import authRouter from "./auth";
 import * as crypto from "crypto";
 
 // File upload configuration
@@ -62,6 +63,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve project files
   app.use("/projects", express.static(projectsDir));
+  
+  // Register authentication routes
+  app.use("/auth", authRouter);
   
   // API Routes
   

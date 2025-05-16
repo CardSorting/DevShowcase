@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Heart, Bell, Code } from "lucide-react";
+import AuthButton from "./AuthButton";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,13 +47,7 @@ export default function Header() {
             <button className="text-gray-500 hover:text-primary">
               <Bell className="h-5 w-5" />
             </button>
-            <div className="relative">
-              <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </button>
-            </div>
+            <AuthButton />
           </div>
         </div>
       </div>
