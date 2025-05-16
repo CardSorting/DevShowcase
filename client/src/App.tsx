@@ -9,6 +9,7 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import DeveloperDashboardPage from "@/pages/DeveloperDashboardPage";
+import UploadPage from "@/pages/UploadPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
@@ -19,9 +20,10 @@ function Router() {
       <Route path="/project/:id" component={ProjectPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/upload" component={UploadPage} />
       <Route path="/admin/dashboard" component={AdminDashboardPage} />
       <Route path="/developer/dashboard" component={DeveloperDashboardPage} />
-      <Route component={NotFound} />
+      <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
 }
