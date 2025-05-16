@@ -58,7 +58,7 @@ const createProjectSchema = z.object({
 
 import { NextFunction } from 'express';
 import { projectController } from './domain/project/ProjectController';
-import { setupAuth, isAuthenticated, login, logout, getCurrentUser } from './simpleAuth';
+import { isAuthenticated, login, logout, getCurrentUser } from './basicAuth';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup paths for project files
@@ -68,8 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve project files
   app.use("/projects", express.static(projectsDir));
   
-  // Set up simple authentication
-  setupAuth(app);
+  // No auth setup needed for our basic token-based auth
   
   // API Routes
   
