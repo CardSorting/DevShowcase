@@ -139,13 +139,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { title, description, category } = result.data;
       
+      // Get authenticated user from session or use anonymous fallback
+      let userId = 0; // Default to 0 for truly anonymous (not in DB)
+      let username = "Anonymous";
+      
+      if (req.session?.isAuthenticated && req.session?.user) {
+        userId = req.session.user.id;
+        username = req.session.user.username;
+        console.log(`Uploading project for authenticated user: ${username} (ID: ${userId})`);
+      } else {
+        console.log("Uploading project for anonymous user");
+      }
+      
       // Extract and host the project using new SOLID architecture
       const projectData = await newProjectService.processUpload(req.file, {
         title,
         description,
         category,
-        userId: 1, // Anonymous user for now
-        username: "Anonymous", // Default username
+        userId,
+        username,
       });
       
       // Store project in the database

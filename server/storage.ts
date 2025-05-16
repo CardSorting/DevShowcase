@@ -19,6 +19,7 @@ export interface ProjectFilters {
   search: string;
   page: number;
   visitorId: string;
+  userId?: number; // Optional filter by user ID
 }
 
 // Storage interface
