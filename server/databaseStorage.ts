@@ -114,31 +114,42 @@ export class DatabaseStorage implements IStorage {
       const totalCount = Number(totalCountResult[0]?.count ?? 0);
       const totalPages = Math.ceil(totalCount / pageSize);
       
-      // Build base query for selecting projects
-      const baseQuery = db.select().from(projects).where(whereCondition);
+      // Execute the query with sorting and pagination
+      let projectsResult;
       
-      // Add sorting to query
-      let sortedQuery;
-      switch (sort) {
-        case "recent":
-          sortedQuery = baseQuery.orderBy(desc(projects.createdAt));
-          break;
-        case "views":
-          sortedQuery = baseQuery.orderBy(desc(projects.views));
-          break;
-        case "trending":
-          sortedQuery = baseQuery
-            .orderBy(desc(projects.trending))
-            .orderBy(desc(projects.views))
-            .orderBy(desc(projects.likes));
-          break;
-        case "popular":
-        default:
-          sortedQuery = baseQuery.orderBy(desc(projects.likes));
+      // We need to handle the query building differently due to TypeScript limitations
+      if (sort === "recent") {
+        projectsResult = await db.select()
+          .from(projects)
+          .where(whereCondition)
+          .orderBy(desc(projects.createdAt))
+          .limit(pageSize)
+          .offset(offset);
+      } else if (sort === "views") {
+        projectsResult = await db.select()
+          .from(projects)
+          .where(whereCondition)
+          .orderBy(desc(projects.views))
+          .limit(pageSize)
+          .offset(offset);
+      } else if (sort === "trending") {
+        projectsResult = await db.select()
+          .from(projects)
+          .where(whereCondition)
+          .orderBy(desc(projects.trending))
+          .orderBy(desc(projects.views))
+          .orderBy(desc(projects.likes))
+          .limit(pageSize)
+          .offset(offset);
+      } else {
+        // Popular is the default sort - by likes
+        projectsResult = await db.select()
+          .from(projects)
+          .where(whereCondition)
+          .orderBy(desc(projects.likes))
+          .limit(pageSize)
+          .offset(offset);
       }
-      
-      // Execute the main query with pagination
-      const projectsResult = await sortedQuery.limit(pageSize).offset(offset);
       
       // Small delay to avoid hitting rate limits between queries
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -159,7 +170,7 @@ export class DatabaseStorage implements IStorage {
       });
       
       // Find project likes all at once instead of individually
-      const projectIds = projectsResult.map(p => p.id);
+      const projectIds = projectsResult.map((p: any) => p.id);
       const likesForProjects = projectIds.length > 0 
         ? await db
             .select()
@@ -180,8 +191,8 @@ export class DatabaseStorage implements IStorage {
       
       // Get all user ids needed
       const userIds = projectsResult
-        .map(p => p.userId)
-        .filter((id): id is number => id !== null);
+        .map((p: any) => p.userId)
+        .filter((id: any): id is number => id !== null);
         
       // Fetch all users in one query if there are any user IDs
       const userMap = new Map<number, User>();
@@ -197,16 +208,21 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Transform projects with user data and like status
-      const enrichedProjects = projectsResult.map(project => {
+      const enrichedProjects = projectsResult.map((project: any) => {
         const user = project.userId !== null ? userMap.get(project.userId) : undefined;
         const isLiked = projectLikeMap.get(project.id) || false;
         
-        return {
+        // Convert DB date to string format to match Project interface
+        const formattedProject = {
           ...project,
           userId: project.userId ?? undefined, // Convert null to undefined to match ProjectType
           username: user?.username || "Anonymous",
-          isLiked
-        } as ProjectType;
+          isLiked,
+          createdAt: project.createdAt.toISOString(),
+          updatedAt: project.updatedAt.toISOString()
+        };
+        
+        return formattedProject as unknown as ProjectType;
       });
       
       return {
@@ -238,12 +254,17 @@ export class DatabaseStorage implements IStorage {
         isLiked = likedResult;
       }
 
-      return {
+      // Convert database dates to string format to match ProjectType interface
+      const formattedProject = {
         ...project,
         userId: project.userId ?? undefined, // Convert null to undefined to match ProjectType
         username: user?.username || "Anonymous",
         isLiked,
-      } as ProjectType;
+        createdAt: project.createdAt.toISOString(),
+        updatedAt: project.updatedAt.toISOString()
+      };
+
+      return formattedProject as unknown as ProjectType;
     });
   }
 
