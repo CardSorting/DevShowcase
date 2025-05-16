@@ -8,6 +8,8 @@ import { projectService } from "./projectService";
 import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import * as crypto from "crypto";
+import cookieParser from "cookie-parser";
+import authRoutes from "./domains/auth/authRoutes";
 
 // File upload configuration
 const upload = multer({
@@ -59,6 +61,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup paths for project files
   const projectsDir = path.join(process.cwd(), "projects");
   await fs.mkdir(projectsDir, { recursive: true });
+  
+  // Middleware
+  app.use(cookieParser());
+  
+  // Store storage in app.locals for easy access in routes
+  app.locals.storage = storage;
+  
+  // Authentication routes
+  app.use('/api/auth', authRoutes);
   
   // Serve project files
   app.use("/projects", express.static(projectsDir));
