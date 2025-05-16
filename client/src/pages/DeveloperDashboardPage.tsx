@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   Card,
   CardContent,
@@ -21,7 +21,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatNumber } from "@/lib/utils";
+import { Helmet } from "react-helmet";
+import { 
+  BarChart, 
+  LineChart, 
+  TrendingUp, 
+  Eye, 
+  Heart, 
+  FileUp, 
+  Download, 
+  BarChart2, 
+  PieChart,
+  Upload
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Project } from "@shared/types";
 
 export default function DeveloperDashboardPage() {
   const { user, isAuthenticated, isDeveloper } = useAuth();
@@ -31,7 +46,7 @@ export default function DeveloperDashboardPage() {
   // Redirect if not authenticated or not a developer
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate("/login?redirect=/developer/dashboard");
       toast({
         title: "Authentication Required",
         description: "Please log in to access the developer dashboard.",
@@ -47,7 +62,7 @@ export default function DeveloperDashboardPage() {
     }
   }, [isAuthenticated, isDeveloper, navigate, toast]);
 
-  // Fetch user's projects
+  // Fetch user's projects with analytics
   const { data: userProjects, isLoading: isLoadingProjects } = useQuery({
     queryKey: ["/api/projects/user"],
     enabled: isAuthenticated && isDeveloper,
@@ -56,6 +71,11 @@ export default function DeveloperDashboardPage() {
   if (!isAuthenticated || !isDeveloper) {
     return null;
   }
+  
+  // Calculate totals from projects
+  const totalProjects = userProjects?.length || 0;
+  const totalViews = userProjects?.reduce((sum: number, project: any) => sum + project.views, 0) || 0;
+  const totalLikes = userProjects?.reduce((sum: number, project: any) => sum + project.likes, 0) || 0;
 
   return (
     <div className="container mx-auto py-10">
