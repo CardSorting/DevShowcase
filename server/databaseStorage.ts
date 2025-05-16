@@ -7,7 +7,6 @@ import {
   type InsertProjectLike,
   type User,
   type InsertUser,
-  type UpsertUser,
   users,
   projects,
   projectViews,
@@ -42,26 +41,23 @@ const withRetry = async <T>(
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: number): Promise<User | undefined> {
     return withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
     });
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
     return withRetry(async () => {
-      const [user] = await db
-        .insert(users)
-        .values(userData)
-        .onConflictDoUpdate({
-          target: users.id,
-          set: {
-            ...userData,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    });
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    return withRetry(async () => {
+      const [user] = await db.insert(users).values(insertUser).returning();
       return user;
     });
   }
@@ -196,10 +192,10 @@ export class DatabaseStorage implements IStorage {
       // Get all user ids needed
       const userIds = projectsResult
         .map((p: any) => p.userId)
-        .filter((id: any): id is string => id !== null);
+        .filter((id: any): id is number => id !== null);
         
       // Fetch all users in one query if there are any user IDs
-      const userMap = new Map<string, User>();
+      const userMap = new Map<number, User>();
       if (userIds.length > 0) {
         const usersResult = await db
           .select()
@@ -220,6 +216,7 @@ export class DatabaseStorage implements IStorage {
         const formattedProject = {
           ...project,
           userId: project.userId ?? undefined, // Convert null to undefined to match ProjectType
+          username: user?.username || "Anonymous",
           isLiked,
           createdAt: project.createdAt.toISOString(),
           updatedAt: project.updatedAt.toISOString()

@@ -10,13 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Rocket, LogIn } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { Upload, Rocket } from "lucide-react";
 
 export default function UploadSection() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -161,27 +159,7 @@ export default function UploadSection() {
       <Card>
         <CardContent className="pt-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-6">Upload Your Project</h2>
-          
-          {isLoading ? (
-            <div className="py-16 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading...</p>
-            </div>
-          ) : !isAuthenticated ? (
-            <div className="py-8 text-center">
-              <h3 className="text-xl font-medium mb-4">Sign in to share your projects</h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                You need to be logged in to upload projects to the community gallery
-              </p>
-              <Button asChild size="lg">
-                <a href="/api/login" className="flex items-center">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign in to continue
-                </a>
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <div className="mb-8">
               <div 
                 className={`drop-zone border-2 border-dashed rounded-md p-10 text-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary hover:bg-primary/5'}`}
@@ -277,7 +255,6 @@ export default function UploadSection() {
               </Button>
             </div>
           </form>
-          )}
         </CardContent>
       </Card>
     </section>

@@ -1,33 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Heart, Bell, Code, LogOut, LogIn, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "../hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Search, Heart, Bell, Code } from "lucide-react";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Navigate to gallery with search query
     navigate(`/?search=${encodeURIComponent(searchQuery)}`);
-  };
-  
-  // Get display name from user info
-  const getDisplayName = () => {
-    if (!user) return "U";
-    return user.firstName?.[0] || user.email?.[0] || "U";
   };
   
   return (
@@ -57,50 +41,19 @@ export default function Header() {
           </div>
           
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                <Link href="/upload" className="text-gray-500 hover:text-primary">
-                  <Upload className="h-5 w-5" />
-                </Link>
-                <button className="text-gray-500 hover:text-primary">
-                  <Heart className="h-5 w-5" />
-                </button>
-                <button className="text-gray-500 hover:text-primary">
-                  <Bell className="h-5 w-5" />
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                      <Avatar className="h-8 w-8">
-                        {user?.profileImageUrl && (
-                          <AvatarImage src={user.profileImageUrl} alt="Profile" />
-                        )}
-                        <AvatarFallback>{getDisplayName()}</AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Link href="/profile" className="w-full">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href="/my-projects" className="w-full">My Projects</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <a href="/api/logout" className="w-full">Log out</a>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <Button asChild>
-                <a href="/api/login" className="flex items-center">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Log in
-                </a>
-              </Button>
-            )}
+            <button className="text-gray-500 hover:text-primary">
+              <Heart className="h-5 w-5" />
+            </button>
+            <button className="text-gray-500 hover:text-primary">
+              <Bell className="h-5 w-5" />
+            </button>
+            <div className="relative">
+              <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>U</AvatarFallback>
+                </Avatar>
+              </button>
+            </div>
           </div>
         </div>
       </div>
