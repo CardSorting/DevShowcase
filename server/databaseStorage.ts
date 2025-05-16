@@ -7,10 +7,14 @@ import {
   type InsertProjectLike,
   type User,
   type InsertUser,
+  type Permission,
+  type RolePermission,
   users,
   projects,
   projectViews,
-  projectLikes
+  projectLikes,
+  permissions,
+  rolePermissions
 } from "@shared/schema";
 import { Project as ProjectType } from "@shared/types";
 import { db, pool } from "./db";
