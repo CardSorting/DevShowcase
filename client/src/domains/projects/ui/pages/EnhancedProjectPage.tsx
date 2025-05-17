@@ -188,7 +188,7 @@ export function EnhancedProjectPage() {
               variant="secondary" 
               size="sm" 
               className="bg-background/50 backdrop-blur-sm"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back

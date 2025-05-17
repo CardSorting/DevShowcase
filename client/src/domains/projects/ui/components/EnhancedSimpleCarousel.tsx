@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
-import { Project } from "@shared/types";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Project } from "../../entities/Project";
 
 interface SimpleCarouselProps {
   projects: Project[];
   className?: string;
 }
 
-export default function SimpleCarousel({ projects, className }: SimpleCarouselProps) {
+/**
+ * EnhancedSimpleCarousel Component
+ * A carousel component that uses our domain model
+ * Follows React best practices and hooks rules
+ */
+export function EnhancedSimpleCarousel({ projects, className }: SimpleCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   // Filter for featured or trending projects
@@ -20,8 +25,8 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
   const displayProjects = filteredProjects.length >= 3 
     ? filteredProjects 
     : projects.slice(0, Math.min(5, projects.length));
-    
-  // Early bail if no projects
+  
+  // Early return if no projects
   if (displayProjects.length === 0) {
     return null;
   }
@@ -93,7 +98,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img 
-            src={project.thumbnailUrl || project.previewUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
+            src={project.getDisplayImage()} 
             alt={project.title} 
             className="w-full h-full object-cover"
           />
@@ -122,7 +127,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
                     key={star} 
                     className={cn(
                       "h-4 w-4", 
-                      star <= Math.min(Math.round(project.likes / 3), 5) 
+                      star <= project.getStarRating() 
                         ? "text-yellow-400 fill-yellow-400" 
                         : "text-gray-400"
                     )} 
@@ -130,7 +135,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
                 ))}
               </div>
               <span className="text-sm text-white/80">
-                {project.views} installs
+                {project.getFormattedViewCount()} views
               </span>
             </div>
             
@@ -144,7 +149,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
           <div className="md:w-1/3 z-10 flex justify-center md:justify-end">
             <div className="relative w-[180px] h-[180px] rounded-xl overflow-hidden bg-white shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
               <img 
-                src={project.thumbnailUrl || project.previewUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
+                src={project.getDisplayImage()} 
                 alt={project.title} 
                 className="w-full h-full object-cover"
               />

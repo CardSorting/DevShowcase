@@ -165,10 +165,11 @@ export class ApiProjectRepository implements ProjectRepository {
       const data = await response.json();
       
       // Transform API response to domain objects
-      return data.projects.map((p: ProjectAttributes) => Project.fromApiResponse(p));
+      return data.projects.map((p: any) => Project.fromApiResponse(p));
     } catch (error) {
       console.error(`Error fetching projects by status ${status}:`, error);
-      throw error;
+      // Return empty array instead of throwing to avoid breaking the UI
+      return [];
     }
   }
   
