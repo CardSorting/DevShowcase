@@ -9,6 +9,7 @@ import { newProjectService } from "./newProjectService";
 import { z } from "zod";
 import authRouter from "./auth";
 import * as crypto from "crypto";
+import { projectVerificationMiddleware } from './core/utils/ProjectVerificationMiddleware';
 
 // File upload configuration
 const upload = multer({
@@ -62,7 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await fs.mkdir(projectsDir, { recursive: true });
   
   // Serve project files with a different URL prefix to avoid conflict with React routes
-  app.use("/static-projects", express.static(projectsDir));
+  // Use a dedicated path for static content to prevent route conflicts
+  app.use("/static-content/projects", express.static(projectsDir));
+  
+  // Add routes for project viewing with verification
+  app.use("/project/view", projectVerificationMiddleware);
+  app.use("/project/assets", projectVerificationMiddleware);
   
   // Register authentication routes
   app.use("/auth", authRouter);

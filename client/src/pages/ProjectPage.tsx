@@ -139,6 +139,17 @@ export default function ProjectPage() {
               className="w-full h-full border-0"
               title={`Preview of ${project.title}`}
               sandbox="allow-same-origin allow-scripts allow-forms"
+              onError={() => {
+                // If the iframe fails to load using the direct URL,
+                // try the alternative URL format
+                const projectId = project.projectUrl.split('/').pop();
+                const altUrl = `/project/view/${projectId}`;
+                if (projectId && altUrl !== project.previewUrl) {
+                  // This will trigger a reload with the new URL
+                  const frame = document.querySelector('iframe');
+                  if (frame) frame.src = altUrl;
+                }
+              }}
             ></iframe>
           </div>
         </div>
@@ -183,7 +194,7 @@ export default function ProjectPage() {
                 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <a
-                    href={project.projectUrl}
+                    href={`/project/view/${project.projectUrl.split('/').pop()}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full"
