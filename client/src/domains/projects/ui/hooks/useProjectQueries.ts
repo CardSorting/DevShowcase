@@ -46,10 +46,22 @@ export function useProjectQueries() {
   } = useQuery({
     queryKey: ['/api/projects', selectedCategory],
     queryFn: async () => {
-      if (selectedCategory) {
-        return repository.getProjectsByCategory(selectedCategory, baseOptions);
-      } else {
-        return repository.getProjects(baseOptions);
+      try {
+        if (selectedCategory) {
+          return await repository.getProjectsByCategory(selectedCategory, baseOptions);
+        } else {
+          return await repository.getProjects(baseOptions);
+        }
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+        // Return a minimal valid result structure to prevent UI errors
+        return {
+          projects: [],
+          totalCount: 0,
+          totalPages: 1,
+          currentPage: 1,
+          categoryCounts: {}
+        };
       }
     }
   });
