@@ -9,10 +9,10 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center">
               <Code className="h-6 w-6 text-primary mr-2" />
-              <span className="font-bold text-xl text-textColor">DevShowcase</span>
+              <span className="font-bold text-xl text-textColor">EggPlays</span>
             </div>
             <p className="text-gray-500 mt-4">
-              A platform for developers to showcase their web projects and get discovered.
+              A platform for gamers to share and discover exciting game projects.
             </p>
             <div className="flex space-x-4 mt-6">
               <a href="#" className="text-gray-400 hover:text-primary">
@@ -62,7 +62,7 @@ export default function Footer() {
         </div>
         
         <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} DevShowcase. All rights reserved.</p>
+          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} EggPlays. All rights reserved.</p>
           <div className="mt-4 md:mt-0 flex space-x-6">
             <Link href="#" className="text-gray-500 hover:text-gray-900 text-sm">Terms of Service</Link>
             <Link href="#" className="text-gray-500 hover:text-gray-900 text-sm">Privacy Policy</Link>

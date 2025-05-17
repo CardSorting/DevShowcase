@@ -48,7 +48,7 @@ export default function Header() {
             <Link href="/" className="flex items-center">
               <Code className="h-6 w-6 text-primary mr-2" />
               <span className="font-bold text-xl text-textColor">
-                DevShowcase
+                EggPlays
               </span>
             </Link>
           </div>

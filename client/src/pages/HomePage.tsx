@@ -155,8 +155,8 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>DevShowcase - Interactive Project Gallery</title>
-        <meta name="description" content="Explore our interactive developer showcase with advanced filtering, parallax effects and infinite scrolling. Discover amazing web projects." />
+        <title>EggPlays - Interactive Game Projects Gallery</title>
+        <meta name="description" content="Explore our interactive game showcase with advanced filtering, parallax effects and infinite scrolling. Discover amazing game projects." />
       </Helmet>
       
       {/* Parallax Hero Section */}
@@ -173,10 +173,10 @@ export default function HomePage() {
         
         <div className="relative z-10 text-center px-4 max-w-4xl" style={{ transform: `translateY(${scrollY * -0.2}px)` }}>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
-            <span className="text-primary">Dev</span>Showcase
+            <span className="text-primary">Egg</span>Plays
           </h1>
           <p className="text-lg md:text-xl text-foreground/90 max-w-3xl mx-auto mb-8">
-            Discover and explore innovative web projects in our interactive gallery
+            Discover and explore exciting game projects in our interactive gallery
           </p>
           <div className="flex justify-center space-x-4">
             <Button size="lg" asChild>
