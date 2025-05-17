@@ -24,21 +24,36 @@ export default function MyProjectsPage() {
   } = useQuery<ProjectList>({
     queryKey: ['/api/my/projects'],
     retry: 1,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const res = await fetch(queryKey[0] as string, { credentials: "include" });
+        
+        if (res.status === 401) {
+          throw { status: 401, message: "Authentication required" };
+        }
+        
+        if (!res.ok) {
+          throw new Error(`${res.status}: ${res.statusText}`);
+        }
+        
+        return await res.json();
+      } catch (err) {
+        throw err;
+      }
+    }
   });
   
   // Handle error state
   useEffect(() => {
-    if (isError && error instanceof Error) {
-      if ((error as any).status === 401) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to view your projects.",
-          variant: "destructive",
-        });
+    if (isError) {
+      if ((error as any)?.status === 401) {
+        // No need to show a toast for authentication error
+        // The UI will already show the login button
+        console.log("Authentication required to view projects");
       } else {
         toast({
           title: "Error loading projects",
-          description: error.message || "Could not load your projects. Please try again.",
+          description: error instanceof Error ? error.message : "Could not load your projects. Please try again.",
           variant: "destructive",
         });
       }
@@ -106,15 +121,20 @@ export default function MyProjectsPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h3 className="text-lg font-medium">Failed to load projects</h3>
+          <h3 className="text-lg font-medium">Authentication Required</h3>
           <p className="text-gray-500 mt-1 mb-4">
-            {(error as any).status === 401 
-              ? "Please log in to view your projects" 
+            {(error as any)?.status === 401 
+              ? "Please log in with GitHub to view and manage your projects" 
               : "There was a problem loading your projects"}
           </p>
-          {(error as any).status === 401 && (
-            <Button asChild>
-              <Link href="/auth/github">Login with GitHub</Link>
+          {(error as any)?.status === 401 && (
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+              <a href="/auth/github" className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+                Login with GitHub
+              </a>
             </Button>
           )}
         </div>
@@ -173,7 +193,31 @@ export default function MyProjectsPage() {
       )}
       
       <div className="mt-16">
-        <UploadSection />
+        {isError && (error as any)?.status === 401 ? (
+          <section id="upload" className="mb-16">
+            <div className="border-2 border-dashed rounded-lg p-10 text-center">
+              <div className="mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold mb-4">Authentication Required</h2>
+              <p className="text-gray-500 mb-6">
+                Please log in with GitHub to upload and manage your projects.
+              </p>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                <a href="/auth/github" className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                  </svg>
+                  Login with GitHub
+                </a>
+              </Button>
+            </div>
+          </section>
+        ) : (
+          <UploadSection />
+        )}
       </div>
     </div>
   );

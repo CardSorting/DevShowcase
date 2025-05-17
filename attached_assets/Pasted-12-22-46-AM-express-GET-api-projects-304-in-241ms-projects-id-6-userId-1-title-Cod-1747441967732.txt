@@ -1,0 +1,121 @@
+12:22:46 AM [express] GET /api/projects 304 in 241ms :: {"projects":[{"id":6,"userId":1,"title":"Code…
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:22:46.007Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:22:51.104Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:22:56.453Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:01.780Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:12.097Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:17.418Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:22.859Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:28.185Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:23:58.666Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:24:49.163Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:24:54.517Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
