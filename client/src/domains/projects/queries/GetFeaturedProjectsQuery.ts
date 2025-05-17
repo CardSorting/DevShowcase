@@ -9,6 +9,9 @@ export class GetFeaturedProjectsQuery {
   constructor(private repository: ProjectRepository) {}
 
   async execute(limit: number = 5): Promise<Project[]> {
-    return await this.repository.getFeaturedProjects(limit);
+    // Use the getProjectsByStatus method to get featured projects
+    return await this.repository.getProjectsByStatus('featured', {
+      pagination: { page: 1, pageSize: limit }
+    });
   }
 }

@@ -1,6 +1,7 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ProjectCategory } from "../../entities/Project";
 import { 
   Code, Layout, Gamepad2, PenTool, 
   FileCode, GalleryHorizontal, PackageOpen, Bot, 
@@ -24,9 +25,9 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 interface CategoryNavigationProps {
-  categories: string[];
-  selectedCategory: string | null;
-  onSelectCategory: (category: string) => void;
+  categories: ProjectCategory[];
+  selectedCategory: ProjectCategory | "";
+  onSelectCategory: (category: ProjectCategory | "") => void;
   className?: string;
 }
 
@@ -40,7 +41,7 @@ export function CategoryNavigation({
   onSelectCategory,
   className
 }: CategoryNavigationProps) {
-  const handleCategoryClick = (category: string) => {
+  const handleCategoryClick = (category: ProjectCategory) => {
     const newCategory = selectedCategory === category ? "" : category;
     onSelectCategory(newCategory);
   };

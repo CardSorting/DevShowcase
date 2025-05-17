@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Project } from "../../entities/Project";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,77 +12,94 @@ interface FeaturedProjectsProps {
 
 /**
  * FeaturedProjects Component
- * Presentation component that displays featured projects in a carousel
+ * Displays a carousel of featured projects
  */
 export function FeaturedProjects({ projects, className }: FeaturedProjectsProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Skip rendering if no projects
   if (projects.length === 0) {
     return null;
   }
   
-  // Auto advance the carousel
+  // Function to move to the next slide
+  const goToNext = () => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setCurrentIndex(prev => (prev + 1) % projects.length);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
+  };
+  
+  // Function to move to the previous slide
+  const goToPrev = () => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setCurrentIndex(prev => (prev - 1 + projects.length) % projects.length);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
+  };
+  
+  // Auto-advance carousel
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => 
-        (prevIndex + 1) % projects.length
-      );
+    const interval = setInterval(() => {
+      if (!isTransitioning) {
+        goToNext();
+      }
     }, 5000);
     
-    return () => clearInterval(timer);
-  }, [projects.length]);
-  
-  const handlePrevious = () => {
-    setCurrentIndex((prevIndex) => 
-      (prevIndex - 1 + projects.length) % projects.length
-    );
-  };
-  
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => 
-      (prevIndex + 1) % projects.length
-    );
-  };
+    return () => clearInterval(interval);
+  }, [isTransitioning, projects.length]);
   
   const project = projects[currentIndex];
   
   return (
     <div className={cn("relative overflow-hidden rounded-xl", className)}>
       {/* Carousel Navigation */}
-      <Button 
-        variant="secondary"
-        size="icon"
-        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
-        onClick={handlePrevious}
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
-      
-      <Button 
-        variant="secondary"
-        size="icon"
-        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
-        onClick={handleNext}
-      >
-        <ChevronRight className="h-5 w-5" />
-      </Button>
-      
-      {/* Carousel Indicators */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
-        {projects.map((_, index) => (
-          <button
-            key={index}
-            className={cn(
-              "w-2 h-2 rounded-full transition-all duration-300",
-              index === currentIndex
-                ? "bg-primary w-6"
-                : "bg-primary/30 hover:bg-primary/50"
-            )}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
-      </div>
+      {projects.length > 1 && (
+        <>
+          <Button 
+            variant="secondary"
+            size="icon"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            onClick={goToPrev}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          
+          <Button 
+            variant="secondary"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            onClick={goToNext}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+          
+          {/* Carousel Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+            {projects.map((_, index) => (
+              <button
+                key={index}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  index === currentIndex
+                    ? "bg-primary w-6"
+                    : "bg-primary/30 hover:bg-primary/50"
+                )}
+                onClick={() => setCurrentIndex(index)}
+              />
+            ))}
+          </div>
+        </>
+      )}
       
       {/* Current project display */}
       <div className="relative h-[300px] md:h-[400px]">
@@ -118,7 +135,7 @@ export function FeaturedProjects({ projects, className }: FeaturedProjectsProps)
                     key={star} 
                     className={cn(
                       "h-4 w-4", 
-                      star <= Math.min(Math.round(project.likes / 3), 5) 
+                      star <= project.getStarRating() 
                         ? "text-yellow-400 fill-yellow-400" 
                         : "text-gray-400"
                     )} 
@@ -126,7 +143,7 @@ export function FeaturedProjects({ projects, className }: FeaturedProjectsProps)
                 ))}
               </div>
               <span className="text-sm text-white/80">
-                {project.views} installs
+                {project.getFormattedViewCount()} downloads
               </span>
             </div>
             

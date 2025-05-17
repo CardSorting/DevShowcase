@@ -9,6 +9,9 @@ export class GetTrendingProjectsQuery {
   constructor(private repository: ProjectRepository) {}
 
   async execute(limit: number = 5): Promise<Project[]> {
-    return await this.repository.getTrendingProjects(limit);
+    // Use the getProjectsByStatus method to get trending projects
+    return await this.repository.getProjectsByStatus('trending', {
+      pagination: { page: 1, pageSize: limit }
+    });
   }
 }
