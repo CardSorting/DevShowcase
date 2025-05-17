@@ -105,20 +105,11 @@ export default function HomePage() {
         case "newest":
           filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           break;
-        case "oldest":
-          filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          break;
         case "most-viewed":
           filtered.sort((a, b) => b.views - a.views);
           break;
         case "most-liked":
           filtered.sort((a, b) => b.likes - a.likes);
-          break;
-        case "a-z":
-          filtered.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-        case "z-a":
-          filtered.sort((a, b) => b.title.localeCompare(a.title));
           break;
       }
       
@@ -299,11 +290,8 @@ export default function HomePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="newest">Newest First</SelectItem>
-                    <SelectItem value="oldest">Oldest First</SelectItem>
                     <SelectItem value="most-viewed">Most Viewed</SelectItem>
-                    <SelectItem value="most-liked">Most Liked</SelectItem>
-                    <SelectItem value="a-z">A-Z</SelectItem>
-                    <SelectItem value="z-a">Z-A</SelectItem>
+                    <SelectItem value="most-liked">Most Popular</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -454,11 +442,8 @@ export default function HomePage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
                       <SelectItem value="most-viewed">Most Viewed</SelectItem>
-                      <SelectItem value="most-liked">Most Liked</SelectItem>
-                      <SelectItem value="a-z">A-Z</SelectItem>
-                      <SelectItem value="z-a">Z-A</SelectItem>
+                      <SelectItem value="most-liked">Most Popular</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
