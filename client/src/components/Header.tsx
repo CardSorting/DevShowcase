@@ -144,16 +144,6 @@ export default function Header() {
                 My Projects
               </Link>
             )}
-            
-            {/* Show Submit Project link only when authenticated */}
-            {authStatus?.isAuthenticated && (
-              <Link 
-                href="/#upload" 
-                className="px-5 py-3 text-sm font-medium border-b-2 border-transparent hover:border-primary text-primary hover:text-primary-dark ml-auto"
-              >
-                Submit Project
-              </Link>
-            )}
           </nav>
         </div>
       </div>
