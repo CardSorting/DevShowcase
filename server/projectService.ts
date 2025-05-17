@@ -52,8 +52,8 @@ class ProjectService {
       // For this demo, we'll just use a placeholder
       
       // Return project metadata
-      const projectUrl = `/projects/${projectId}`;
-      const previewUrl = `/projects/${projectId}/index.html`;
+      const projectUrl = `/static-projects/${projectId}`;
+      const previewUrl = `/static-projects/${projectId}/index.html`;
       
       return {
         userId: metadata.userId,

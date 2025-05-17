@@ -61,8 +61,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const projectsDir = path.join(process.cwd(), "projects");
   await fs.mkdir(projectsDir, { recursive: true });
   
-  // Serve project files
-  app.use("/projects", express.static(projectsDir));
+  // Serve project files with a different URL prefix to avoid conflict with React routes
+  app.use("/static-projects", express.static(projectsDir));
   
   // Register authentication routes
   app.use("/auth", authRouter);

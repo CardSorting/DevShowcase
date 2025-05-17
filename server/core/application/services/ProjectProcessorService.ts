@@ -63,8 +63,8 @@ export class ProjectProcessorService implements IProjectProcessor {
       await this.htmlProcessor.ensureRequiredFiles(projectDir, files.htmlFiles);
       
       // Step 6: Generate project URLs
-      const projectUrl = `/projects/${projectId}`;
-      const previewUrl = `/projects/${projectId}/index.html`;
+      const projectUrl = `/static-projects/${projectId}`;
+      const previewUrl = `/static-projects/${projectId}/index.html`;
       
       // Create result object
       const result: ProjectProcessingResult = {
