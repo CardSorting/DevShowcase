@@ -61,7 +61,7 @@ authRouter.get('/github/callback', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'User-Agent': 'DevShowcase-App'
+        'User-Agent': 'EggPlays-App'
       }
     });
     
@@ -75,7 +75,7 @@ authRouter.get('/github/callback', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'User-Agent': 'DevShowcase-App'
+        'User-Agent': 'EggPlays-App'
       }
     });
     
@@ -262,7 +262,7 @@ authRouter.get('/callback/github', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'User-Agent': 'DevShowcase-App'
+        'User-Agent': 'EggPlays-App'
       }
     });
     
@@ -276,7 +276,7 @@ authRouter.get('/callback/github', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'User-Agent': 'DevShowcase-App'
+        'User-Agent': 'EggPlays-App'
       }
     });
     
