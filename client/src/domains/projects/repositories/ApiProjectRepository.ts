@@ -52,15 +52,24 @@ export class ApiProjectRepository implements ProjectRepository {
       
       // Transform API response to domain objects
       return {
-        projects: data.projects.map((p: any) => Project.fromApiResponse(p)),
-        totalCount: data.totalCount,
-        totalPages: data.totalPages,
-        currentPage: data.currentPage,
+        projects: Array.isArray(data.projects) 
+          ? data.projects.map((p: any) => Project.fromApiResponse(p)) 
+          : [],
+        totalCount: data.totalCount || 0,
+        totalPages: data.totalPages || 1,
+        currentPage: data.currentPage || 1,
         categoryCounts: data.categoryCounts || {}
       };
     } catch (error) {
       console.error("Error fetching projects:", error);
-      throw error;
+      // Return empty result instead of throwing to prevent UI errors
+      return {
+        projects: [],
+        totalCount: 0,
+        totalPages: 1,
+        currentPage: 1,
+        categoryCounts: {}
+      };
     }
   }
   
@@ -117,15 +126,24 @@ export class ApiProjectRepository implements ProjectRepository {
       
       // Transform API response to domain objects
       return {
-        projects: data.projects.map((p: ProjectAttributes) => Project.fromApiResponse(p)),
-        totalCount: data.totalCount,
-        totalPages: data.totalPages,
-        currentPage: data.currentPage,
+        projects: Array.isArray(data.projects) 
+          ? data.projects.map((p: any) => Project.fromApiResponse(p))
+          : [],
+        totalCount: data.totalCount || 0,
+        totalPages: data.totalPages || 1,
+        currentPage: data.currentPage || 1,
         categoryCounts: data.categoryCounts || {}
       };
     } catch (error) {
       console.error(`Error fetching projects by category ${category}:`, error);
-      throw error;
+      // Return empty result to prevent UI errors
+      return {
+        projects: [],
+        totalCount: 0,
+        totalPages: 1,
+        currentPage: 1,
+        categoryCounts: {}
+      };
     }
   }
   

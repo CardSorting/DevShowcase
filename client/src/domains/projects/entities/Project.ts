@@ -129,15 +129,49 @@ export class Project {
    * @returns A new Project entity
    */
   static fromApiResponse(data: any): Project {
-    return Project.create({
-      ...data,
-      // Default values for missing fields
-      views: data.views || 0,
-      likes: data.likes || 0,
-      featured: data.featured || false,
-      trending: data.trending || false,
-      isLiked: data.isLiked || false,
-    });
+    try {
+      // Handle possible missing or malformed data from API
+      const projectData: ProjectAttributes = {
+        id: data.id || 0,
+        userId: data.userId,
+        username: data.username || 'Unknown',
+        title: data.title || 'Untitled Project',
+        description: data.description || '',
+        category: data.category || 'Other',
+        projectUrl: data.projectUrl || '#',
+        previewUrl: data.previewUrl || '/placeholder-image.png',
+        thumbnailUrl: data.thumbnailUrl,
+        views: typeof data.views === 'number' ? data.views : 0,
+        likes: typeof data.likes === 'number' ? data.likes : 0,
+        featured: !!data.featured,
+        trending: !!data.trending,
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: data.updatedAt || new Date().toISOString(),
+        isLiked: !!data.isLiked
+      };
+      
+      return Project.create(projectData);
+    } catch (error) {
+      console.error('Error creating Project entity from API data:', error);
+      
+      // Create a minimal valid project to prevent UI errors
+      return Project.create({
+        id: data.id || 0,
+        username: 'Unknown',
+        title: 'Error Loading Project',
+        description: 'There was an error loading this project',
+        category: 'Other',
+        projectUrl: '#',
+        previewUrl: '/placeholder-image.png',
+        views: 0,
+        likes: 0,
+        featured: false,
+        trending: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isLiked: false
+      });
+    }
   }
 
   /**
