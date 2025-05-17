@@ -7,6 +7,12 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/HomePage";
 import ProjectPage from "@/pages/ProjectPage";
 import MyProjectsPage from "@/pages/MyProjectsPage";
+
+// Project category pages
+import PopularProjectsPage from "@/pages/projects/PopularProjectsPage";
+import LatestProjectsPage from "@/pages/projects/LatestProjectsPage";
+import TrendingProjectsPage from "@/pages/projects/TrendingProjectsPage";
+
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 

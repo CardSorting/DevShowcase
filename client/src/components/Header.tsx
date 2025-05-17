@@ -101,9 +101,9 @@ export default function Header() {
               Home
             </Link>
             <Link 
-              href="/?sort=popular" 
+              href="/projects/popular" 
               className={`px-5 py-3 text-sm font-medium border-b-2 ${
-                isActive('/?sort=popular') 
+                location.includes('/projects/popular') 
                   ? 'border-primary text-primary' 
                   : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
               }`}
@@ -111,9 +111,9 @@ export default function Header() {
               Popular
             </Link>
             <Link 
-              href="/?sort=recent" 
+              href="/projects/latest" 
               className={`px-5 py-3 text-sm font-medium border-b-2 ${
-                isActive('/?sort=recent') 
+                location.includes('/projects/latest') 
                   ? 'border-primary text-primary' 
                   : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
               }`}
@@ -121,21 +121,39 @@ export default function Header() {
               Latest
             </Link>
             <Link 
-              href="/?sort=trending" 
+              href="/projects/trending" 
               className={`px-5 py-3 text-sm font-medium border-b-2 ${
-                isActive('/?sort=trending') 
+                location.includes('/projects/trending') 
                   ? 'border-primary text-primary' 
                   : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
               }`}
             >
               Trending
             </Link>
-            <Link 
-              href="/#upload" 
-              className="px-5 py-3 text-sm font-medium border-b-2 border-transparent hover:border-primary text-primary hover:text-primary-dark"
-            >
-              Submit Project
-            </Link>
+            
+            {/* Show My Projects link when authenticated */}
+            {authStatus?.isAuthenticated && (
+              <Link 
+                href="/my/projects" 
+                className={`px-5 py-3 text-sm font-medium border-b-2 ${
+                  location.includes('/my/projects') 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent hover:border-gray-300 hover:text-gray-700 text-gray-500'
+                }`}
+              >
+                My Projects
+              </Link>
+            )}
+            
+            {/* Show Submit Project link only when authenticated */}
+            {authStatus?.isAuthenticated && (
+              <Link 
+                href="/#upload" 
+                className="px-5 py-3 text-sm font-medium border-b-2 border-transparent hover:border-primary text-primary hover:text-primary-dark ml-auto"
+              >
+                Submit Project
+              </Link>
+            )}
           </nav>
         </div>
       </div>
