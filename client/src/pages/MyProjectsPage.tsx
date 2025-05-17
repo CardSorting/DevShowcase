@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import ProjectCard from "@/components/ProjectCard";
+import UploadSection from "@/components/UploadSection";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -170,6 +171,10 @@ export default function MyProjectsPage() {
           )}
         </div>
       )}
+      
+      <div className="mt-16">
+        <UploadSection />
+      </div>
     </div>
   );
 }
