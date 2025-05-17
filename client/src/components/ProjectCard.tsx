@@ -62,7 +62,8 @@ export default function ProjectCard({ project, viewMode }: ProjectCardProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my/projects'] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Delete error:", error);
       toast({
         title: "Error",
         description: "Failed to delete the project. Please try again.",

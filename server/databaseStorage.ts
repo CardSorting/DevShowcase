@@ -315,22 +315,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
-    return withRetry(async () => {
-      // First, delete related records in other tables to handle foreign key constraints
+    try {
+      // Use a transaction to ensure all operations complete or all fail
+      await pool.query('BEGIN');
       
       // 1. Delete project views
       await db.delete(projectViews).where(eq(projectViews.projectId, id));
       
+      // Wait a bit for the database to process
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // 2. Delete project likes
       await db.delete(projectLikes).where(eq(projectLikes.projectId, id));
       
-      // 3. Wait briefly to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait a bit more for the database to process
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // 4. Finally delete the project itself
-      const result = await db.delete(projects).where(eq(projects.id, id));
-      return result.rowCount !== null && result.rowCount > 0;
-    });
+      // 3. Finally delete the project itself
+      const deleteResult = await db.delete(projects).where(eq(projects.id, id));
+      
+      // 4. Commit the transaction
+      await pool.query('COMMIT');
+      
+      return deleteResult.rowCount !== null && deleteResult.rowCount > 0;
+    } catch (error) {
+      // If any error occurs, roll back the transaction
+      await pool.query('ROLLBACK');
+      console.error('Error deleting project:', error);
+      throw error;
+    }
   }
 
   // View tracking
