@@ -21,13 +21,13 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
     ? filteredProjects 
     : projects.slice(0, Math.min(5, projects.length));
   
-  // Skip rendering if no projects to display
+  // Early return if no projects
+  if (displayProjects.length === 0) {
+    return null;
+  }
+  
+  // Auto advance the carousel
   useEffect(() => {
-    if (displayProjects.length === 0) {
-      return;
-    }
-    
-    // Auto advance the carousel
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => 
         (prevIndex + 1) % displayProjects.length
@@ -93,7 +93,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img 
-            src={project.thumbnailUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
+            src={project.thumbnailUrl || project.previewUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
             alt={project.title} 
             className="w-full h-full object-cover"
           />
@@ -144,7 +144,7 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
           <div className="md:w-1/3 z-10 flex justify-center md:justify-end">
             <div className="relative w-[180px] h-[180px] rounded-xl overflow-hidden bg-white shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
               <img 
-                src={project.thumbnailUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
+                src={project.thumbnailUrl || project.previewUrl || "https://images.unsplash.com/photo-1579403124614-197f69d8187b"} 
                 alt={project.title} 
                 className="w-full h-full object-cover"
               />
