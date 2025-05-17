@@ -55,46 +55,71 @@ export function useProjectQueries() {
   });
   
   // Featured projects query
-  const { data: featuredProjects = [] } = useQuery({
+  const { data: featuredProjects = [], isLoading: isFeaturedLoading } = useQuery({
     queryKey: ['/api/projects/featured'],
     queryFn: async () => {
-      return queries.getFeaturedProjects.execute(5);
+      try {
+        return await queries.getFeaturedProjects.execute(5);
+      } catch (error) {
+        console.error("Error fetching featured projects:", error);
+        return [];
+      }
     }
   });
   
   // Trending projects query
-  const { data: trendingProjects = [] } = useQuery({
+  const { data: trendingProjects = [], isLoading: isTrendingLoading } = useQuery({
     queryKey: ['/api/projects/trending'],
     queryFn: async () => {
-      return queries.getTrendingProjects.execute(8);
+      try {
+        return await queries.getTrendingProjects.execute(8);
+      } catch (error) {
+        console.error("Error fetching trending projects:", error);
+        return [];
+      }
     }
   });
   
   // Top projects query
-  const { data: topProjects = [] } = useQuery({
+  const { data: topProjects = [], isLoading: isTopLoading } = useQuery({
     queryKey: ['/api/projects/top'],
     queryFn: async () => {
-      return repository.getProjectsByStatus('popular', {
-        pagination: { page: 1, pageSize: 5 }
-      });
+      try {
+        return await repository.getProjectsByStatus('popular', {
+          pagination: { page: 1, pageSize: 5 }
+        });
+      } catch (error) {
+        console.error("Error fetching top projects:", error);
+        return [];
+      }
     }
   });
   
   // New projects query
-  const { data: newProjects = [] } = useQuery({
+  const { data: newProjects = [], isLoading: isNewLoading } = useQuery({
     queryKey: ['/api/projects/new'],
     queryFn: async () => {
-      return repository.getProjectsByStatus('new', {
-        pagination: { page: 1, pageSize: 8 }
-      });
+      try {
+        return await repository.getProjectsByStatus('new', {
+          pagination: { page: 1, pageSize: 8 }
+        });
+      } catch (error) {
+        console.error("Error fetching new projects:", error);
+        return [];
+      }
     }
   });
   
   // Recommended projects query
-  const { data: recommendedProjects = [] } = useQuery({
+  const { data: recommendedProjects = [], isLoading: isRecommendedLoading } = useQuery({
     queryKey: ['/api/projects/recommended'],
     queryFn: async () => {
-      return repository.getRecommendedProjects(undefined, 6);
+      try {
+        return await repository.getRecommendedProjects(undefined, 6);
+      } catch (error) {
+        console.error("Error fetching recommended projects:", error);
+        return [];
+      }
     }
   });
   
