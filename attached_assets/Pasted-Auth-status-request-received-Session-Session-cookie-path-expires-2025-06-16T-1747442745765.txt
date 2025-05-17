@@ -1,0 +1,265 @@
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:37:42.697Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+12:37:43 AM [express] GET /api/projects 304 in 245ms :: {"projects":[{"id":6,"userId":1,"title":"Code…
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:37:43.110Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:37:48.215Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:37:53.524Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:37:58.847Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:04.154Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:09.504Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:14.813Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:20.122Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:25.445Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:30.774Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:36.085Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:38:41.395Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:39:31.820Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:39:57.217Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:40:42.638Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:43:07.470Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:43:12.854Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:44:33.108Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:44:53.477Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:45:18.788Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:45:24.160Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:45:29.536Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
+Auth status request received
+Session: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-06-16T00:45:34.844Z,
+    originalMaxAge: 2591999995,
+    httpOnly: true,
+    secure: false
+  }
+}
+User not authenticated
