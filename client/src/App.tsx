@@ -22,6 +22,12 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/project/:id" component={ProjectPage} />
       <Route path="/my/projects" component={MyProjectsPage} />
+      
+      {/* Project category routes */}
+      <Route path="/projects/popular" component={PopularProjectsPage} />
+      <Route path="/projects/latest" component={LatestProjectsPage} />
+      <Route path="/projects/trending" component={TrendingProjectsPage} />
+      
       <Route component={NotFound} />
     </Switch>
   );
