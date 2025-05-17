@@ -21,12 +21,9 @@ export default function FeaturedCarousel({ projects, className }: FeaturedCarous
     ? filteredProjects 
     : projects.slice(0, Math.min(5, projects.length));
   
-  if (displayProjects.length === 0) {
-    return null;
-  }
-  
+  // Move to the next slide
   const goToNext = useCallback(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || displayProjects.length === 0) return;
     
     setIsTransitioning(true);
     setCurrentIndex(prev => (prev + 1) % displayProjects.length);
@@ -34,10 +31,11 @@ export default function FeaturedCarousel({ projects, className }: FeaturedCarous
     setTimeout(() => {
       setIsTransitioning(false);
     }, 500);
-  }, [displayProjects.length, isTransitioning]);
+  }, [isTransitioning, displayProjects.length]);
   
+  // Move to the previous slide
   const goToPrev = useCallback(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || displayProjects.length === 0) return;
     
     setIsTransitioning(true);
     setCurrentIndex(prev => (prev - 1 + displayProjects.length) % displayProjects.length);
@@ -45,16 +43,22 @@ export default function FeaturedCarousel({ projects, className }: FeaturedCarous
     setTimeout(() => {
       setIsTransitioning(false);
     }, 500);
-  }, [displayProjects.length, isTransitioning]);
+  }, [isTransitioning, displayProjects.length]);
   
   // Auto-advance carousel
   useEffect(() => {
+    if (displayProjects.length === 0) return;
+    
     const interval = setInterval(() => {
       goToNext();
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, displayProjects.length]);
+  
+  if (displayProjects.length === 0) {
+    return null;
+  }
   
   return (
     <div className={cn("relative overflow-hidden rounded-xl", className)}>
@@ -98,7 +102,7 @@ export default function FeaturedCarousel({ projects, className }: FeaturedCarous
         className="flex transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {displayProjects.map((project, index) => (
+        {displayProjects.map((project) => (
           <div 
             key={project.id} 
             className="w-full flex-shrink-0"

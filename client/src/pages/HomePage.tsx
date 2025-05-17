@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ProjectList, Project } from "@shared/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, Sparkles, Gift } from "lucide-react";
-import FeaturedCarousel from "@/components/FeaturedCarousel";
+import SimpleCarousel from "@/components/SimpleCarousel";
 import CategoryScroller from "@/components/CategoryScroller";
 import RecommendedProjects from "@/components/RecommendedProjects";
 import TopCharts from "@/components/TopCharts";
@@ -48,7 +48,7 @@ export default function HomePage() {
       <main className="w-full bg-background pb-16">
         {/* Featured Carousel */}
         <div className="mb-6 md:mb-8">
-          <FeaturedCarousel 
+          <SimpleCarousel 
             projects={projectsData?.projects || []} 
           />
         </div>
