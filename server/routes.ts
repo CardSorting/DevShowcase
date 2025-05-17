@@ -300,6 +300,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete a project
+  app.delete("/api/projects/:id", async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated
+      if (!req.session?.isAuthenticated || !req.session?.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const projectId = parseInt(req.params.id, 10);
+      const userId = req.session.user.id;
+      
+      // First, check if the project belongs to the user
+      const project = await storage.getProjectById(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Check if the user is the owner of the project
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to delete this project" });
+      }
+      
+      // Delete the project
+      const success = await storage.deleteProject(projectId);
+      
+      if (success) {
+        res.status(200).json({ success: true });
+      } else {
+        res.status(500).json({ message: "Failed to delete the project" });
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      res.status(500).json({ message: "Error deleting project" });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
