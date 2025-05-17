@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ProjectCard from "@/components/ProjectCard";
 import { Project, ProjectList } from "@shared/types";
@@ -20,23 +18,15 @@ import {
   ArrowRight, 
   Search, 
   Filter, 
-  SlidersHorizontal, 
   Check, 
   X, 
-  ChevronUp, 
-  Star, 
-  Eye, 
-  TrendingUp
+  ChevronUp
 } from "lucide-react";
 
 export default function HomePage() {
   // Filter state
-  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<string>("newest");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [minViews, setMinViews] = useState<number>(0);
-  const [maxViews, setMaxViews] = useState<number>(1000);
   const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
   
   // Pagination state
@@ -74,7 +64,7 @@ export default function HomePage() {
     setDisplayedProjects([]);
     setHasMore(true);
     firstLoad.current = true;
-  }, [activeCategory, selectedCategories, sortBy, searchTerm, minViews, maxViews]);
+  }, [selectedCategories, searchTerm]);
 
   // Filtering and pagination logic
   useEffect(() => {
@@ -97,21 +87,8 @@ export default function HomePage() {
         );
       }
       
-      // Views filter
-      filtered = filtered.filter(p => p.views >= minViews && p.views <= maxViews);
-      
-      // Sort projects
-      switch (sortBy) {
-        case "newest":
-          filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          break;
-        case "most-viewed":
-          filtered.sort((a, b) => b.views - a.views);
-          break;
-        case "most-liked":
-          filtered.sort((a, b) => b.likes - a.likes);
-          break;
-      }
+      // Sort projects by newest first
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       // Calculate if there are more projects to load
       const projectsPerPage = 12;
@@ -126,20 +103,12 @@ export default function HomePage() {
         setDisplayedProjects(paginatedProjects);
       }
     }
-  }, [data, selectedCategories, sortBy, searchTerm, minViews, maxViews, page]);
+  }, [data, selectedCategories, searchTerm, page]);
 
   // Create a unique list of categories from the data
   const categories = data?.projects 
     ? Array.from(new Set(data.projects.map(p => p.category)))
     : [];
-
-  // Calculate max views for slider
-  useEffect(() => {
-    if (data?.projects && data.projects.length > 0) {
-      const maxProjectViews = Math.max(...data.projects.map(p => p.views));
-      setMaxViews(maxProjectViews > 0 ? maxProjectViews : 1000);
-    }
-  }, [data]);
 
   // Parallax effect on scroll
   useEffect(() => {
@@ -171,15 +140,7 @@ export default function HomePage() {
   // Clear filters handler
   const clearFilters = () => {
     setSelectedCategories([]);
-    setSortBy("newest");
     setSearchTerm("");
-    setMinViews(0);
-    if (data?.projects) {
-      const maxProjectViews = Math.max(...data.projects.map(p => p.views));
-      setMaxViews(maxProjectViews > 0 ? maxProjectViews : 1000);
-    } else {
-      setMaxViews(1000);
-    }
   };
 
   // Toggle category selection
@@ -281,21 +242,6 @@ export default function HomePage() {
                 </div>
               </div>
               
-              {/* Sort Options */}
-              <div>
-                <h3 className="text-lg font-medium mb-3">Sort By</h3>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Newest First</SelectItem>
-                    <SelectItem value="most-viewed">Most Viewed</SelectItem>
-                    <SelectItem value="most-liked">Most Popular</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               {/* Category Filter */}
               <Collapsible defaultOpen>
                 <div className="flex justify-between items-center">
@@ -330,35 +276,6 @@ export default function HomePage() {
                 </CollapsibleContent>
               </Collapsible>
               
-              {/* Views Range Slider */}
-              <Collapsible defaultOpen>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Views Range</h3>
-                  <CollapsibleTrigger className="p-1 rounded-md hover:bg-muted">
-                    <ChevronDown className="h-4 w-4" />
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <div className="mt-6 px-2">
-                    <Slider
-                      defaultValue={[minViews, maxViews]}
-                      min={0}
-                      max={maxViews}
-                      step={1}
-                      value={[minViews, maxViews]}
-                      onValueChange={([min, max]) => {
-                        setMinViews(min);
-                        setMaxViews(max);
-                      }}
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                      <span>{minViews} views</span>
-                      <span>{maxViews} views</span>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-              
               {/* Action Buttons */}
               <div className="space-y-2">
                 <Button variant="outline" className="w-full flex justify-center" onClick={clearFilters}>
@@ -377,7 +294,7 @@ export default function HomePage() {
             {/* Main Content */}
             <div className="flex-1">
               {/* Filter Summary */}
-              {(selectedCategories.length > 0 || searchTerm || minViews > 0 || maxViews < (data?.projects ? Math.max(...data.projects.map(p => p.views)) : 1000)) && (
+              {(selectedCategories.length > 0 || searchTerm) && (
                 <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-sm font-medium mr-2">Active filters:</span>
@@ -400,22 +317,6 @@ export default function HomePage() {
                       </Badge>
                     )}
                     
-                    {(minViews > 0 || maxViews < (data?.projects ? Math.max(...data.projects.map(p => p.views)) : 1000)) && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        Views: {minViews}-{maxViews}
-                        <button onClick={() => {
-                          setMinViews(0);
-                          if (data?.projects) {
-                            setMaxViews(Math.max(...data.projects.map(p => p.views)));
-                          } else {
-                            setMaxViews(1000);
-                          }
-                        }} className="hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    )}
-                    
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -433,19 +334,6 @@ export default function HomePage() {
                 <div className="text-sm text-muted-foreground">
                   Showing {displayedProjects.length} result{displayedProjects.length !== 1 ? 's' : ''}
                   {data?.projects && ` out of ${data.projects.length} projects`}
-                </div>
-                <div className="flex items-center">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="most-viewed">Most Viewed</SelectItem>
-                      <SelectItem value="most-liked">Most Popular</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             
