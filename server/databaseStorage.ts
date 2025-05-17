@@ -185,8 +185,19 @@ export class DatabaseStorage implements IStorage {
         categoryCountsObject[item.category] = Number(item.count);
       });
       
+      // Filter out duplicate projects with the same projectUrl
+      const uniqueProjects: any[] = [];
+      const projectUrlSet = new Set<string>();
+      
+      for (const project of projectsResult) {
+        if (!projectUrlSet.has(project.projectUrl)) {
+          projectUrlSet.add(project.projectUrl);
+          uniqueProjects.push(project);
+        }
+      }
+      
       // Find project likes all at once instead of individually
-      const projectIds = projectsResult.map((p: any) => p.id);
+      const projectIds = uniqueProjects.map((p: any) => p.id);
       const likesForProjects = projectIds.length > 0 
         ? await db
             .select()
@@ -224,7 +235,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Transform projects with user data and like status
-      const enrichedProjects = projectsResult.map((project: any) => {
+      const enrichedProjects = uniqueProjects.map((project: any) => {
         const user = project.userId !== null ? userMap.get(project.userId) : undefined;
         const isLiked = projectLikeMap.get(project.id) || false;
         
