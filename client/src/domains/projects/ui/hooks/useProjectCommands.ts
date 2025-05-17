@@ -83,8 +83,8 @@ export const useProjectCommands = () => {
   
   // Mutation for creating a new project
   const createProjectMutation = useMutation({
-    mutationFn: async (project: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>) => {
-      return await repository.createProject(project);
+    mutationFn: async (projectData: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>) => {
+      return await repository.createProject(projectData);
     },
     onSuccess: (createdProject) => {
       // Invalidate projects list and show success message
@@ -177,8 +177,8 @@ export const useProjectCommands = () => {
     isToggleLikeLoading: toggleLikeMutation.isPending,
     
     // Create commands
-    createProject: (project: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>) => 
-      createProjectMutation.mutateAsync(project),
+    createProject: (projectData: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>) => 
+      createProjectMutation.mutateAsync(projectData),
     isCreating: createProjectMutation.isPending,
     
     // Update commands

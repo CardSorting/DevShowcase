@@ -223,7 +223,7 @@ export class ApiProjectRepository implements ProjectRepository {
   /**
    * Create a new project
    */
-  async createProject(projectData: Omit<Project, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project> {
+  async createProject(projectData: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project> {
     try {
       const response = await fetch('/api/projects', {
         method: 'POST',
@@ -248,7 +248,7 @@ export class ApiProjectRepository implements ProjectRepository {
   /**
    * Update an existing project
    */
-  async updateProject(id: number, projectData: Partial<Project>): Promise<Project | null> {
+  async updateProject(id: number, projectData: Partial<ProjectAttributes>): Promise<Project | null> {
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: 'PATCH', // Use PATCH for partial updates

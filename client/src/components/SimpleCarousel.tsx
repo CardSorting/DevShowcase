@@ -21,13 +21,13 @@ export default function SimpleCarousel({ projects, className }: SimpleCarouselPr
     ? filteredProjects 
     : projects.slice(0, Math.min(5, projects.length));
   
-  // Skip rendering if no projects
-  if (displayProjects.length === 0) {
-    return null;
-  }
-  
-  // Auto advance the carousel
+  // Skip rendering if no projects to display
   useEffect(() => {
+    if (displayProjects.length === 0) {
+      return;
+    }
+    
+    // Auto advance the carousel
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => 
         (prevIndex + 1) % displayProjects.length

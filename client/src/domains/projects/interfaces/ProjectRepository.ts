@@ -1,4 +1,4 @@
-import { Project, ProjectCategory, ProjectStatus } from '../entities/Project';
+import { Project, ProjectCategory, ProjectStatus, ProjectAttributes } from '../entities/Project';
 
 /**
  * ProjectList Result Type
@@ -73,12 +73,12 @@ export interface ProjectRepository {
   /**
    * Create a new project
    */
-  createProject(project: Omit<Project, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project>;
+  createProject(projectData: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project>;
   
   /**
    * Update an existing project
    */
-  updateProject(id: number, project: Partial<Project>): Promise<Project | null>;
+  updateProject(id: number, projectData: Partial<ProjectAttributes>): Promise<Project | null>;
   
   /**
    * Delete a project
