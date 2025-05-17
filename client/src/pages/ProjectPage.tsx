@@ -192,16 +192,7 @@ export default function ProjectPage() {
                   </li>
                 </ul>
                 
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <a
-                    href={`/project/view/${project.projectUrl.split('/').pop()}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full"
-                  >
-                    <Button className="w-full">View Live Project</Button>
-                  </a>
-                </div>
+                {/* Removed "View Live Project" button as it's currently not functioning correctly */}
               </CardContent>
             </Card>
           </div>
