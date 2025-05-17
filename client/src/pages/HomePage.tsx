@@ -390,8 +390,8 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-6 md:mb-0">
-                <h3 className="text-lg font-bold">DevShowcase</h3>
-                <p className="text-sm text-muted-foreground">Discover, share, and get inspired</p>
+                <h3 className="text-lg font-bold">EggPlays</h3>
+                <p className="text-sm text-muted-foreground">Discover, share, and play amazing games</p>
               </div>
               <div className="flex space-x-4">
                 <Button variant="outline" size="sm" asChild>
@@ -404,7 +404,7 @@ export default function HomePage() {
             </div>
             <Separator className="my-6" />
             <div className="text-center text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} DevShowcase. All rights reserved.
+              &copy; {new Date().getFullYear()} EggPlays. All rights reserved.
             </div>
           </div>
         </footer>

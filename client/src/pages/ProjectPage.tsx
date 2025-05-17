@@ -90,7 +90,7 @@ export default function ProjectPage() {
   return (
     <>
       <Helmet>
-        <title>{`${project.title} - DevShowcase`}</title>
+        <title>{`${project.title} - EggPlays`}</title>
         <meta name="description" content={project.description} />
       </Helmet>
       
