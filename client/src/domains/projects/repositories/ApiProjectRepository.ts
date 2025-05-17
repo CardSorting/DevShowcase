@@ -182,6 +182,15 @@ export class ApiProjectRepository implements ProjectRepository {
       
       const data = await response.json();
       
+      // Check if we have a valid response with projects
+      if (!data || !data.projects || !Array.isArray(data.projects)) {
+        console.warn(`Invalid data received for projects with status ${status}`);
+        return [];
+      }
+      
+      // Simply return the projects we received
+      // The UI will handle empty states appropriately
+      
       // Transform API response to domain objects
       return data.projects.map((p: any) => Project.fromApiResponse(p));
     } catch (error) {
