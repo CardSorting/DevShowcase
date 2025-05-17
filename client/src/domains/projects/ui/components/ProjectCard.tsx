@@ -1,169 +1,267 @@
 import { Link } from "wouter";
 import { Project } from "../../entities/Project";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Heart, Eye, Star, Download } from "lucide-react";
-import { useProjectCommands } from "../hooks/useProjectCommands";
 import { cn } from "@/lib/utils";
+import { useProjectCommands } from "../hooks/useProjectCommands";
+import { Heart, Eye, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface ProjectCardProps {
   project: Project;
-  viewType?: "card" | "grid" | "list";
+  viewType: 'card' | 'grid' | 'list';
+  className?: string;
 }
 
 /**
  * ProjectCard Component
- * Presentation component that uses our domain entities
+ * Displays a project in different view types (card, grid, or list)
  */
-export function ProjectCard({ project, viewType = "card" }: ProjectCardProps) {
+export function ProjectCard({ 
+  project, 
+  viewType,
+  className 
+}: ProjectCardProps) {
   const { toggleLike, isToggleLikeLoading } = useProjectCommands();
-
-  const handleLike = (e: React.MouseEvent) => {
+  
+  const handleLike = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleLike(project.id);
+    
+    if (!isToggleLikeLoading) {
+      toggleLike(project.id);
+    }
   };
-
-  if (viewType === "grid") {
+  
+  const handleVisitProject = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Open project in a new tab
+    window.open(project.projectUrl, '_blank');
+  };
+  
+  // Card view (compact, grid-friendly display)
+  if (viewType === 'card') {
     return (
       <Link href={`/project/${project.id}`}>
-        <div className="group relative overflow-hidden rounded-lg">
-          <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+        <Card className={cn("overflow-hidden group h-full transition-all hover:shadow-md", className)}>
+          <div className="aspect-video relative overflow-hidden bg-muted">
             <img 
               src={project.getDisplayImage()} 
-              alt={project.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              alt={project.title}
+              className="object-cover w-full h-full transition-transform group-hover:scale-105"
             />
+            
+            {project.featured && (
+              <Badge className="absolute top-2 left-2 bg-primary/70 hover:bg-primary/70">
+                Featured
+              </Badge>
+            )}
+            
+            {project.trending && (
+              <Badge className="absolute top-2 right-2 bg-orange-500/70 hover:bg-orange-500/70">
+                Trending
+              </Badge>
+            )}
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-            <h3 className="font-medium text-white text-sm">{project.title}</h3>
-            <p className="text-gray-300 text-xs">{project.username}</p>
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  if (viewType === "list") {
-    return (
-      <Card className="overflow-hidden hover:shadow-md transition-all duration-300">
-        <Link href={`/project/${project.id}`}>
-          <div className="flex">
-            <div className="w-32 sm:w-48 h-24 sm:h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-              <img 
-                src={project.getDisplayImage()} 
-                alt={project.title} 
-                className="w-full h-full object-cover"
-              />
+          
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
+                {project.title}
+              </h3>
             </div>
             
-            <CardContent className="flex-1 p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold">{project.title}</h3>
-                <span className="text-xs text-muted-foreground">{project.getFormattedDate()}</span>
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+              {project.description}
+            </p>
+            
+            <div className="text-xs text-muted-foreground">
+              {project.category} • {project.username}
+            </div>
+          </CardContent>
+          
+          <CardFooter className="px-4 py-3 border-t text-xs text-muted-foreground flex justify-between items-center bg-muted/30">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <Eye className="h-3.5 w-3.5" />
+                <span>{project.getFormattedViewCount()}</span>
               </div>
               
-              <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{project.description}</p>
-              
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {project.category}
-                  </Badge>
-                  <span className="text-muted-foreground">{project.username}</span>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Eye className="h-3 w-3" />
-                    <span>{project.views}</span>
-                  </div>
-                  
-                  <button 
-                    onClick={handleLike}
-                    className="flex items-center gap-1 text-muted-foreground"
-                    disabled={isToggleLikeLoading}
-                  >
-                    <Heart className={`h-3 w-3 ${project.isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                    <span>{project.likes}</span>
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </div>
-        </Link>
-      </Card>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 rounded-full"
+                onClick={handleLike}
+              >
+                <Heart 
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors", 
+                    project.isLiked && "fill-red-500 text-red-500"
+                  )} 
+                />
+                <span className="sr-only">Like</span>
+              </Button>
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7"
+              onClick={handleVisitProject}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="sr-only">Open project</span>
+            </Button>
+          </CardFooter>
+        </Card>
+      </Link>
     );
   }
   
-  // Default card view
-  return (
-    <Card className="overflow-hidden h-full transition-all duration-300 hover:shadow-lg group relative">
+  // List view (horizontal, detail-rich layout)
+  if (viewType === 'list') {
+    return (
       <Link href={`/project/${project.id}`}>
-        <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+        <Card className={cn("overflow-hidden group transition-all hover:shadow-md", className)}>
+          <div className="flex flex-col sm:flex-row">
+            <div className="sm:w-1/3 md:w-1/4 aspect-video sm:aspect-square relative overflow-hidden bg-muted">
+              <img 
+                src={project.getDisplayImage()} 
+                alt={project.title}
+                className="object-cover w-full h-full transition-transform group-hover:scale-105"
+              />
+              
+              {project.featured && (
+                <Badge className="absolute top-2 left-2 bg-primary/70 hover:bg-primary/70">
+                  Featured
+                </Badge>
+              )}
+              
+              {project.trending && (
+                <Badge className="absolute top-2 right-2 bg-orange-500/70 hover:bg-orange-500/70">
+                  Trending
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex-1 p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-lg group-hover:text-primary transition-colors">
+                  {project.title}
+                </h3>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                {project.description}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  <span className="inline-block bg-muted/50 px-2 py-0.5 rounded text-xs">
+                    {project.category}
+                  </span>
+                  <span className="mx-2">•</span>
+                  <span>By {project.username}</span>
+                  <span className="mx-2">•</span>
+                  <span>{project.getFormattedDate()}</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-sm">
+                    <Eye className="h-4 w-4" />
+                    <span>{project.getFormattedViewCount()}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-sm">
+                    <Heart 
+                      className={cn(
+                        "h-4 w-4", 
+                        project.isLiked && "fill-red-500 text-red-500"
+                      )} 
+                    />
+                    <span>{project.getFormattedLikeCount()}</span>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1"
+                    onClick={handleVisitProject}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Visit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </Link>
+    );
+  }
+  
+  // Grid view (compact thumbnail-focused display)
+  return (
+    <Link href={`/project/${project.id}`}>
+      <div className={cn("group relative overflow-hidden rounded-lg", className)}>
+        <div className="aspect-square relative overflow-hidden bg-muted">
           <img 
             src={project.getDisplayImage()} 
-            alt={project.title} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            alt={project.title}
+            className="object-cover w-full h-full transition-transform group-hover:scale-105"
           />
-          <div className="absolute bottom-2 left-2 z-10">
-            <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm text-xs">
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+            <h3 className="font-medium text-white">
+              {project.title}
+            </h3>
+            <p className="text-xs text-white/80">
               {project.category}
-            </Badge>
+            </p>
           </div>
           
-          <div className="absolute top-2 right-2 z-10 flex space-x-1">
-            <button
+          {project.featured && (
+            <Badge className="absolute top-2 left-2 bg-primary/70 hover:bg-primary/70">
+              Featured
+            </Badge>
+          )}
+          
+          {project.trending && (
+            <Badge className="absolute top-2 right-2 bg-orange-500/70 hover:bg-orange-500/70">
+              Trending
+            </Badge>
+          )}
+          
+          <div className="absolute bottom-2 right-2 flex gap-1">
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 text-white"
               onClick={handleLike}
-              className={`bg-white/90 rounded-full p-1.5 shadow-sm ${project.isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'}`}
-              disabled={isToggleLikeLoading}
             >
-              <Heart className={`h-4 w-4 ${project.isLiked ? "fill-red-500" : ""}`} />
-            </button>
+              <Heart 
+                className={cn(
+                  "h-4 w-4", 
+                  project.isLiked && "fill-red-500 text-red-500"
+                )} 
+              />
+              <span className="sr-only">Like</span>
+            </Button>
             
             <Button 
-              variant="outline"
-              size="icon"
-              className="rounded-full h-8 w-8 bg-white/90 backdrop-blur-sm"
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 text-white"
+              onClick={handleVisitProject}
             >
-              <Download className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4" />
+              <span className="sr-only">Open project</span>
             </Button>
           </div>
         </div>
-        
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="font-semibold text-lg line-clamp-1">{project.title}</h3>
-          </div>
-          
-          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{project.description}</p>
-          
-          <div className="flex items-center gap-2 mb-1">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  className={cn(
-                    "h-3 w-3", 
-                    star <= Math.min(Math.round(project.likes / 5), 5) 
-                      ? "text-yellow-500 fill-yellow-500" 
-                      : "text-gray-300 dark:text-gray-600"
-                  )} 
-                />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              ({project.views < 1000 ? project.views : `${(project.views / 1000).toFixed(1)}K`})
-            </span>
-          </div>
-          
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>{project.username}</span>
-            <span>{project.getFormattedDate()}</span>
-          </div>
-        </CardContent>
-      </Link>
-    </Card>
+      </div>
+    </Link>
   );
 }

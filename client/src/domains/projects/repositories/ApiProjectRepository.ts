@@ -1,359 +1,330 @@
-import { Project, ProjectCategory, ProjectStatus, ProjectAttributes } from '../entities/Project';
 import { 
   ProjectRepository, 
-  ProjectRepositoryOptions,
-  ProjectSortOption,
-  PopularityFilter,
-  ProjectListResult 
+  ProjectListResult, 
+  ProjectRepositoryOptions 
 } from '../interfaces/ProjectRepository';
-import { apiRequest } from '@/lib/queryClient';
+import { Project, ProjectCategory, ProjectStatus, ProjectAttributes } from '../entities/Project';
 import { queryClient } from '@/lib/queryClient';
-import { ProjectList } from '@shared/types';
 
 /**
- * API Implementation of Project Repository
- * Follows Dependency Inversion Principle (DIP) and Repository Pattern
- * This implementation adapts the backend API to our domain model
+ * ApiProjectRepository Implementation
+ * Concrete implementation of the ProjectRepository interface using API calls
  */
 export class ApiProjectRepository implements ProjectRepository {
   /**
-   * Builds a query string from repository options
-   * Adapts our domain-specific options to the API's expected format
+   * Get a paginated list of projects with optional filtering
    */
-  private buildQueryUrl(options: ProjectRepositoryOptions): string {
-    const params = new URLSearchParams();
-    
-    // Handle sorting
-    if (options.sort) {
-      // Map domain sort options to API sort parameters
-      let sortParam: string;
-      switch (options.sort) {
-        case 'newest': sortParam = 'created_desc'; break;
-        case 'oldest': sortParam = 'created_asc'; break;
-        case 'most-viewed': sortParam = 'views'; break;
-        case 'most-liked': sortParam = 'likes'; break;
-        case 'alphabetical': sortParam = 'alphabetical'; break;
-        default: sortParam = 'popular'; break;
-      }
-      params.append('sort', sortParam);
-    }
-    
-    // Handle category filters
-    if (options.categories && options.categories.length > 0) {
-      params.append('categories', options.categories.join(','));
-    }
-    
-    // Handle popularity filter
-    if (options.popularity) {
-      params.append('popularity', options.popularity);
-    }
-    
-    // Handle search query
-    if (options.search) {
-      params.append('search', options.search);
-    }
-    
-    // Handle pagination
-    if (options.pagination) {
-      params.append('page', options.pagination.page.toString());
-      if (options.pagination.pageSize) {
+  async getProjects(options?: ProjectRepositoryOptions): Promise<ProjectListResult> {
+    try {
+      // Construct query parameters
+      const params = new URLSearchParams();
+      
+      // Add pagination
+      if (options?.pagination) {
+        params.append('page', options.pagination.page.toString());
         params.append('pageSize', options.pagination.pageSize.toString());
       }
-    } else if (options.pagination === undefined) {
-      // Default to page 1 if not specified
-      params.append('page', '1');
-    }
-    
-    // Handle user filter
-    if (options.userId) {
-      params.append('userId', options.userId.toString());
-    }
-    
-    // Handle date range filters
-    if (options.dateRange) {
-      if (options.dateRange.startDate) {
-        params.append('startDate', options.dateRange.startDate);
-      }
-      if (options.dateRange.endDate) {
-        params.append('endDate', options.dateRange.endDate);
-      }
-    }
-    
-    // Handle minimum stats filters
-    if (options.minViews) {
-      params.append('minViews', options.minViews.toString());
-    }
-    if (options.minLikes) {
-      params.append('minLikes', options.minLikes.toString());
-    }
-    
-    return `/api/projects?${params.toString()}`;
-  }
-
-  /**
-   * Maps the API response to our domain model
-   * Handles transformations between API and domain entities
-   */
-  private mapToProjectList(data: ProjectList): ProjectListResult {
-    // Convert projects to domain entities
-    const projects = Project.createMany(data.projects);
-    
-    // Calculate additional metrics for the UI
-    const featuredCount = projects.filter(p => p.featured).length;
-    const trendingCount = projects.filter(p => p.trending).length;
-    
-    // Calculate new projects (less than 7 days old)
-    const newCount = projects.filter(p => {
-      const createdDate = new Date(p.createdAt);
-      const now = new Date();
-      const daysSinceCreation = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysSinceCreation < 7;
-    }).length;
-    
-    return {
-      projects,
-      totalCount: data.totalCount,
-      totalPages: data.totalPages,
-      currentPage: data.currentPage,
-      categoryCounts: data.categoryCounts,
-      // Additional metadata
-      featuredCount,
-      trendingCount,
-      newCount
-    };
-  }
-
-  /**
-   * Get projects with flexible filtering options
-   */
-  async getProjects(options: ProjectRepositoryOptions = {}): Promise<ProjectListResult> {
-    try {
-      const url = this.buildQueryUrl(options);
-      const response = await apiRequest('GET', url);
-      const data = await response.json() as ProjectList;
       
-      return this.mapToProjectList(data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      // Return empty result on error
+      // Add sorting
+      if (options?.sort) {
+        params.append('sort', options.sort);
+      }
+      
+      // Add search
+      if (options?.search) {
+        params.append('search', options.search);
+      }
+      
+      // Add user filter
+      if (options?.userId) {
+        params.append('userId', options.userId.toString());
+      }
+      
+      // Fetch data from API
+      const url = `/api/projects?${params.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to domain objects
       return {
-        projects: [],
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        categoryCounts: {},
-        featuredCount: 0,
-        trendingCount: 0,
-        newCount: 0
+        projects: data.projects.map((p: any) => Project.fromApiResponse(p)),
+        totalCount: data.totalCount,
+        totalPages: data.totalPages,
+        currentPage: data.currentPage,
+        categoryCounts: data.categoryCounts || {}
       };
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      throw error;
     }
   }
-
+  
   /**
    * Get a single project by ID
    */
   async getProjectById(id: number): Promise<Project | null> {
     try {
-      const response = await apiRequest('GET', `/api/projects/${id}`);
+      const response = await fetch(`/api/projects/${id}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to fetch project: ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      
-      // Record view without affecting the result
-      this.recordProjectView(id).catch(err => console.error('Failed to record view:', err));
-      
-      return Project.create(data);
+      return Project.fromApiResponse(data);
     } catch (error) {
-      console.error('Error fetching project:', error);
-      return null;
+      console.error(`Error fetching project ${id}:`, error);
+      throw error;
     }
   }
-
+  
   /**
    * Get projects by category
    */
-  async getProjectsByCategory(category: ProjectCategory, options: ProjectRepositoryOptions = {}): Promise<ProjectListResult> {
-    const updatedOptions = { 
-      ...options, 
-      categories: [...(options.categories || []), category] 
-    };
-    
-    return this.getProjects(updatedOptions);
-  }
-  
-  /**
-   * Get projects by status (featured, trending, new, etc.)
-   */
-  async getProjectsByStatus(status: ProjectStatus, options: ProjectRepositoryOptions = {}): Promise<Project[]> {
-    let updatedOptions: ProjectRepositoryOptions = { ...options };
-    
-    switch (status) {
-      case 'featured':
-        updatedOptions.popularity = 'featured';
-        break;
-      case 'trending':
-        updatedOptions.popularity = 'trending';
-        break;
-      case 'new':
-        // For new projects, sort by newest first
-        updatedOptions.sort = 'newest';
-        updatedOptions.dateRange = {
-          // Projects from the last 7 days
-          startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        };
-        break;
-      default:
-        // No special handling for regular status
-        break;
+  async getProjectsByCategory(category: ProjectCategory, options?: ProjectRepositoryOptions): Promise<ProjectListResult> {
+    try {
+      // Use the getProjects method but append the category filter
+      const params = new URLSearchParams();
+      params.append('categories', category);
+      
+      // Construct query parameters
+      if (options?.pagination) {
+        params.append('page', options.pagination.page.toString());
+        params.append('pageSize', options.pagination.pageSize.toString());
+      }
+      
+      if (options?.sort) {
+        params.append('sort', options.sort);
+      }
+      
+      // Fetch data from API
+      const url = `/api/projects?${params.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects by category: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to domain objects
+      return {
+        projects: data.projects.map((p: ProjectAttributes) => Project.fromApiResponse(p)),
+        totalCount: data.totalCount,
+        totalPages: data.totalPages,
+        currentPage: data.currentPage,
+        categoryCounts: data.categoryCounts || {}
+      };
+    } catch (error) {
+      console.error(`Error fetching projects by category ${category}:`, error);
+      throw error;
     }
-    
-    const result = await this.getProjects(updatedOptions);
-    return result.projects;
-  }
-
-  /**
-   * Get featured projects
-   */
-  async getFeaturedProjects(limit = 5): Promise<Project[]> {
-    const projects = await this.getProjectsByStatus('featured');
-    return projects.slice(0, limit);
-  }
-
-  /**
-   * Get trending projects
-   */
-  async getTrendingProjects(limit = 5): Promise<Project[]> {
-    const projects = await this.getProjectsByStatus('trending');
-    return projects.slice(0, limit);
-  }
-
-  /**
-   * Get top projects by popularity
-   */
-  async getTopProjects(limit = 5): Promise<Project[]> {
-    const result = await this.getProjects({ 
-      sort: 'popular',
-      pagination: { page: 1, pageSize: limit }
-    });
-    return result.projects;
   }
   
   /**
-   * Get new projects (created within a specified number of days)
+   * Get projects by status (featured, trending, etc.)
    */
-  async getNewProjects(daysSinceCreation = 7, limit = 5): Promise<Project[]> {
-    const startDate = new Date(Date.now() - daysSinceCreation * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    const result = await this.getProjects({
-      sort: 'newest',
-      dateRange: { startDate },
-      pagination: { page: 1, pageSize: limit }
-    });
-    
-    return result.projects;
+  async getProjectsByStatus(status: ProjectStatus, options?: ProjectRepositoryOptions): Promise<Project[]> {
+    try {
+      // Convert status to API parameters
+      const params = new URLSearchParams();
+      
+      // Add specific status filter
+      if (status === 'featured') {
+        params.append('featured', 'true');
+      } else if (status === 'trending') {
+        params.append('trending', 'true');
+      } else if (status === 'popular') {
+        params.append('popularity', 'high');
+      } else if (status === 'new') {
+        params.append('sort', 'newest');
+      }
+      
+      // Add pagination
+      if (options?.pagination) {
+        params.append('page', options.pagination.page.toString());
+        params.append('pageSize', options.pagination.pageSize.toString());
+      }
+      
+      // Fetch data from API
+      const url = `/api/projects?${params.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects by status: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to domain objects
+      return data.projects.map((p: ProjectAttributes) => Project.fromApiResponse(p));
+    } catch (error) {
+      console.error(`Error fetching projects by status ${status}:`, error);
+      throw error;
+    }
   }
   
   /**
-   * Get recommended projects based on user preferences
-   * If no userId is provided, returns popular projects
+   * Get projects by user ID
    */
-  async getRecommendedProjects(userId?: number, limit = 5): Promise<Project[]> {
-    // If we have a userId, we would implement sophisticated recommendation logic here
-    // For now, just return popular projects as recommendations
-    const result = await this.getProjects({ 
-      sort: 'popular',
-      pagination: { page: 1, pageSize: limit }
-    });
-    
-    return result.projects;
+  async getProjectsByUser(userId: number, options?: ProjectRepositoryOptions): Promise<ProjectListResult> {
+    try {
+      // Use the getProjects method with user filter
+      return this.getProjects({
+        ...options,
+        userId
+      });
+    } catch (error) {
+      console.error(`Error fetching projects by user ${userId}:`, error);
+      throw error;
+    }
   }
   
   /**
-   * Get projects created by a specific user
+   * Get recommended projects for a user (or general recommendations if not specified)
    */
-  async getUserProjects(userId: number, options: ProjectRepositoryOptions = {}): Promise<ProjectListResult> {
-    return this.getProjects({
-      ...options,
-      userId
-    });
-  }
-  
-  /**
-   * Search projects by text query
-   */
-  async searchProjects(query: string, options: ProjectRepositoryOptions = {}): Promise<ProjectListResult> {
-    return this.getProjects({
-      ...options,
-      search: query
-    });
-  }
-
-  /**
-   * Record a view for a project
-   */
-  async recordProjectView(projectId: number): Promise<void> {
-    await apiRequest('POST', `/api/projects/${projectId}/view`);
-  }
-
-  /**
-   * Toggle like status for a project
-   */
-  async toggleProjectLike(projectId: number): Promise<{ liked: boolean }> {
-    const response = await apiRequest('POST', `/api/projects/${projectId}/like`);
-    const result = await response.json();
-    
-    // Invalidate cache for this project and project lists
-    queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
-    queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-    
-    return result;
+  async getRecommendedProjects(userId?: number, limit: number = 5): Promise<Project[]> {
+    try {
+      // For now, we'll simulate recommendations by getting popular projects
+      // In a real implementation, this would call a recommendation endpoint
+      const params = new URLSearchParams();
+      params.append('popularity', 'high');
+      params.append('pageSize', limit.toString());
+      
+      if (userId) {
+        params.append('recommended_for', userId.toString());
+      }
+      
+      const url = `/api/projects?${params.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recommended projects: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to domain objects
+      return data.projects.map((p: ProjectAttributes) => Project.fromApiResponse(p));
+    } catch (error) {
+      console.error("Error fetching recommended projects:", error);
+      throw error;
+    }
   }
   
   /**
    * Create a new project
    */
-  async createProject(project: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project> {
-    const response = await apiRequest('POST', '/api/projects', project);
-    const data = await response.json();
-    
-    // Invalidate projects list cache
-    queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-    
-    return Project.create(data);
+  async createProject(projectData: Omit<Project, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project> {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create project: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return Project.fromApiResponse(data);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      throw error;
+    }
   }
   
   /**
    * Update an existing project
    */
-  async updateProject(projectId: number, data: Partial<ProjectAttributes>): Promise<Project | null> {
+  async updateProject(id: number, projectData: Partial<Project>): Promise<Project | null> {
     try {
-      const response = await apiRequest('PATCH', `/api/projects/${projectId}`, data);
-      const updatedData = await response.json();
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'PATCH', // Use PATCH for partial updates
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+      });
       
-      // Invalidate related caches
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to update project: ${response.statusText}`);
+      }
       
-      return Project.create(updatedData);
+      const data = await response.json();
+      return Project.fromApiResponse(data);
     } catch (error) {
-      console.error('Error updating project:', error);
-      return null;
+      console.error(`Error updating project ${id}:`, error);
+      throw error;
     }
   }
   
   /**
    * Delete a project
    */
-  async deleteProject(projectId: number): Promise<boolean> {
+  async deleteProject(id: number): Promise<boolean> {
     try {
-      await apiRequest('DELETE', `/api/projects/${projectId}`);
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'DELETE',
+      });
       
-      // Invalidate related caches
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      if (!response.ok) {
+        throw new Error(`Failed to delete project: ${response.statusText}`);
+      }
       
       return true;
     } catch (error) {
-      console.error('Error deleting project:', error);
-      return false;
+      console.error(`Error deleting project ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Toggle like status for a project
+   */
+  async toggleProjectLike(projectId: number): Promise<{ liked: boolean }> {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/like`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to toggle project like: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return { liked: data.liked };
+    } catch (error) {
+      console.error(`Error toggling like for project ${projectId}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Record a view for a project
+   */
+  async recordProjectView(projectId: number): Promise<void> {
+    try {
+      await fetch(`/api/projects/${projectId}/view`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error(`Error recording view for project ${projectId}:`, error);
+      // We don't rethrow the error for views, as it's not critical for the user experience
     }
   }
 }

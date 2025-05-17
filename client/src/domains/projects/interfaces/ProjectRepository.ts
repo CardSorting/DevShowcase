@@ -1,101 +1,97 @@
-import { Project, ProjectAttributes, ProjectCategory, ProjectStatus } from '../entities/Project';
+import { Project, ProjectCategory, ProjectStatus } from '../entities/Project';
 
 /**
- * Project Repository Interface
- * Follows Interface Segregation Principle (ISP) from SOLID
- * Responsible for data access operations
+ * ProjectList Result Type
+ * Represents the response from list operations with pagination and related metadata
  */
-
-// Sort options for project listings
-export type ProjectSortOption = 
-  | "popular" 
-  | "newest" 
-  | "oldest"
-  | "most-viewed"
-  | "most-liked"
-  | "alphabetical";
-
-// Filter options for popularity
-export type PopularityFilter = 
-  | "any" 
-  | "trending" 
-  | "featured"
-  | "new"
-  | "recommended";
-
-// Pagination options with page size
-export interface PaginationOptions {
-  page: number;
-  pageSize?: number;
-}
-
-// Comprehensive repository options for advanced filtering and sorting
-export interface ProjectRepositoryOptions {
-  // Sorting
-  sort?: ProjectSortOption;
-  
-  // Filtering by category
-  categories?: ProjectCategory[];
-  
-  // Filtering by popularity
-  popularity?: PopularityFilter;
-  
-  // Search query
-  search?: string;
-  
-  // Pagination
-  pagination?: PaginationOptions;
-  
-  // Filter by user
-  userId?: number;
-  
-  // Filter by date range
-  dateRange?: {
-    startDate?: string;
-    endDate?: string;
-  };
-  
-  // Filter by minimum stats
-  minViews?: number;
-  minLikes?: number;
-}
-
-// Result type for project listings with metadata
 export interface ProjectListResult {
   projects: Project[];
   totalCount: number;
   totalPages: number;
   currentPage: number;
   categoryCounts: Record<string, number>;
-  
-  // Additional metadata for rich UI
-  featuredCount: number;
-  trendingCount: number;
-  newCount: number;
+}
+
+/**
+ * Pagination Options
+ */
+export interface PaginationOptions {
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Sorting Options for Projects
+ */
+export type ProjectSortOption = 'newest' | 'popular' | 'trending' | 'alphabetical';
+
+/**
+ * Repository Options for querying projects
+ */
+export interface ProjectRepositoryOptions {
+  pagination?: PaginationOptions;
+  sort?: ProjectSortOption;
+  search?: string;
+  userId?: number;
 }
 
 /**
  * ProjectRepository Interface
- * Following Repository Pattern and Interface Segregation Principle
+ * Defines the contract for project data access following the Repository pattern
  */
 export interface ProjectRepository {
-  // Query methods - Read operations following CQRS
-  getProjects(options: ProjectRepositoryOptions): Promise<ProjectListResult>;
-  getProjectById(id: number): Promise<Project | null>;
-  getProjectsByCategory(category: ProjectCategory, options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
-  getProjectsByStatus(status: ProjectStatus, options?: ProjectRepositoryOptions): Promise<Project[]>;
-  getFeaturedProjects(limit?: number): Promise<Project[]>;
-  getTrendingProjects(limit?: number): Promise<Project[]>;
-  getTopProjects(limit?: number): Promise<Project[]>;
-  getNewProjects(daysSinceCreation?: number, limit?: number): Promise<Project[]>;
-  getRecommendedProjects(userId?: number, limit?: number): Promise<Project[]>;
-  getUserProjects(userId: number, options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
-  searchProjects(query: string, options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
+  /**
+   * Get a paginated list of projects with optional filtering
+   */
+  getProjects(options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
   
-  // Command methods - Write operations following CQRS
-  recordProjectView(projectId: number): Promise<void>;
+  /**
+   * Get a single project by ID
+   */
+  getProjectById(id: number): Promise<Project | null>;
+  
+  /**
+   * Get projects by category
+   */
+  getProjectsByCategory(category: ProjectCategory, options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
+  
+  /**
+   * Get projects by status (featured, trending, etc.)
+   */
+  getProjectsByStatus(status: ProjectStatus, options?: ProjectRepositoryOptions): Promise<Project[]>;
+  
+  /**
+   * Get projects by user ID
+   */
+  getProjectsByUser(userId: number, options?: ProjectRepositoryOptions): Promise<ProjectListResult>;
+  
+  /**
+   * Get recommended projects for a user (or general recommendations if not specified)
+   */
+  getRecommendedProjects(userId?: number, limit?: number): Promise<Project[]>;
+  
+  /**
+   * Create a new project
+   */
+  createProject(project: Omit<Project, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project>;
+  
+  /**
+   * Update an existing project
+   */
+  updateProject(id: number, project: Partial<Project>): Promise<Project | null>;
+  
+  /**
+   * Delete a project
+   */
+  deleteProject(id: number): Promise<boolean>;
+  
+  /**
+   * Toggle like status for a project
+   */
   toggleProjectLike(projectId: number): Promise<{ liked: boolean }>;
-  createProject(project: Omit<ProjectAttributes, 'id' | 'views' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<Project>;
-  updateProject(projectId: number, data: Partial<ProjectAttributes>): Promise<Project | null>;
-  deleteProject(projectId: number): Promise<boolean>;
+  
+  /**
+   * Record a view for a project
+   */
+  recordProjectView(projectId: number): Promise<void>;
 }

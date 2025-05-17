@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles, Gift, Crown, Zap, Clock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 // Import domain-specific hooks
 import { useProjectQueries } from "../hooks/useProjectQueries";
