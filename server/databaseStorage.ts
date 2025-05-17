@@ -130,32 +130,41 @@ export class DatabaseStorage implements IStorage {
       // Execute the query with sorting and pagination
       let projectsResult;
       
-      // We need to handle the query building differently due to TypeScript limitations
-      const baseQuery = db.select().from(projects).where(whereCondition);
-      
+      // We need to use raw SQL for complex ordering to avoid TypeScript limitations
       if (sort === "recent") {
-        projectsResult = await baseQuery
-          .orderBy(desc(projects.createdAt))
-          .limit(pageSize)
-          .offset(offset);
+        projectsResult = await db.query.projects.findMany({
+          where: whereCondition,
+          orderBy: [desc(projects.createdAt)],
+          limit: pageSize,
+          offset: offset
+        });
       } else if (sort === "views") {
-        projectsResult = await baseQuery
-          .orderBy(desc(projects.views))
-          .limit(pageSize)
-          .offset(offset);
+        projectsResult = await db.query.projects.findMany({
+          where: whereCondition,
+          orderBy: [desc(projects.views)],
+          limit: pageSize,
+          offset: offset
+        });
       } else if (sort === "trending") {
-        projectsResult = await baseQuery
-          .orderBy(desc(projects.trending))
-          .orderBy(desc(projects.views))
-          .orderBy(desc(projects.likes))
-          .limit(pageSize)
-          .offset(offset);
+        // For trending, we get the results with primary trending filter
+        projectsResult = await db.query.projects.findMany({
+          where: whereCondition,
+          orderBy: [
+            desc(projects.trending),
+            desc(projects.views),
+            desc(projects.likes)
+          ],
+          limit: pageSize,
+          offset: offset
+        });
       } else {
         // Popular is the default sort - by likes
-        projectsResult = await baseQuery
-          .orderBy(desc(projects.likes))
-          .limit(pageSize)
-          .offset(offset);
+        projectsResult = await db.query.projects.findMany({
+          where: whereCondition,
+          orderBy: [desc(projects.likes)],
+          limit: pageSize,
+          offset: offset
+        });
       }
       
       // Small delay to avoid hitting rate limits between queries
