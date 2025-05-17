@@ -15,7 +15,7 @@ export default function HomePage() {
       <main className="w-full bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <HeroSection />
-          <UploadSection />
+          {/* Upload section removed from homepage as requested */}
           <GallerySection />
           <FeaturesSection />
           <CTASection />
